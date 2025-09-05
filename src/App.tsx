@@ -15,6 +15,7 @@ import { CutoutTitle } from './components/CutoutTitle'
 import { LandingPage } from './components/LandingPage'
 import { MobileGuide } from './components/MobileGuide'
 import { Coachmarks } from './components/Coachmarks'
+import { Modal } from './components/Modal'
 
 type Route = { page: 'landing' | 'builder'; pack?: string }
 
@@ -65,6 +66,7 @@ function App() {
   const [glitter, setGlitter] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [isUnlocked, setIsUnlocked] = useState(false)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
   const confettiRef = useRef<import('canvas-confetti').CreateTypes | null>(null)
   const [query, setQuery] = useState('')
   const allTags = useMemo(() => Array.from(new Set(trinkets.flatMap(t => t.tags ?? []))).sort(), [trinkets])
@@ -206,14 +208,7 @@ function App() {
   }
 
   function onCheckout() {
-    const payload = {
-      caseModel: 'iphone-15-pro',
-      slots,
-      items,
-      total,
-    }
-    alert('Mock checkout payload:\n' + JSON.stringify(payload, null, 2))
-    console.log('checkout_start', payload)
+    setCheckoutOpen(true)
   }
 
   // Gate unlock confetti
@@ -467,6 +462,31 @@ function App() {
           />
         </aside>
       </main>
+
+      <Modal
+        open={checkoutOpen}
+        title="Your case"
+        onClose={() => setCheckoutOpen(false)}
+        footer={
+          <>
+            <button className="chip" onClick={() => setCheckoutOpen(false)}>Keep editing</button>
+            <button className="tape-btn" onClick={() => { setCheckoutOpen(false); console.log('checkout_confirm', { items, total }); alert('Pretend checkout… coming soon!') }}>Checkout ${total.toFixed(2)}</button>
+          </>
+        }
+      >
+        <div className="text-sm">
+          <div className="mb-2">Total: <strong>${total.toFixed(2)}</strong></div>
+          <ul className="list-disc list-inside space-y-1">
+            {items.length === 0 ? (
+              <li>No stickers yet — add some!</li>
+            ) : (
+              items.map(({ id, qty }) => (
+                <li key={id}>{trinketMap[id]?.name ?? id} × {qty}</li>
+              ))
+            )}
+          </ul>
+        </div>
+      </Modal>
     </div>
   )
 }
