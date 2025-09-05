@@ -27,25 +27,29 @@ export function PhoneCase({ children }: { children: ReactNode }) {
       className="flex justify-center"
     >
       <div className="relative w-full max-w-[480px] aspect-[9/16]">
-        {/* Case body with subtle gradient + dramatic tilt */}
-        <motion.div initial={{ rotateZ: -8 }} animate={{ rotateZ: -8 }} className="absolute inset-0 rounded-[40px] border-2 border-black bg-gradient-to-br from-[#fffefb] to-[#f6f3ef] shadow-[14px_14px_0_#000]">
+        {/* Case body with pastel gradient, chunky outline, and soft bevel */}
+        <motion.div
+          initial={{ rotateZ: -8 }}
+          animate={{ rotateZ: -8 }}
+          className="absolute inset-0 rounded-[44px] border-[3px] border-black bg-gradient-to-br from-[#fff7fb] via-[#fffafc] to-[#ffeef7] shadow-[16px_16px_0_#000]"
+        >
           {/* Camera notch */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-4 rounded-full bg-black/10"/>
 
-          {/* Inner lip */}
-          <div className="absolute inset-[18px] rounded-[34px] border-2 border-black/20" />
+          {/* Inner lip with soft inner shadow */}
+          <div className="absolute inset-[18px] rounded-[38px] border-2 border-black/20 shadow-[inset_4px_4px_0_#00000010,inset_-4px_-6px_0_#ffffff]" />
 
-          {/* Inner work area with dashed guide and dot grid */}
-          <div className="absolute inset-[22px] rounded-[32px] border-2 border-dashed border-black/40 p-3 overflow-hidden">
+          {/* Inner work area with dotted guide and subtle fabric texture */}
+          <div className="absolute inset-[24px] rounded-[36px] border-2 border-dashed border-black/40 p-3 overflow-hidden bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.7),rgba(255,255,255,0)_55%)]">
             {/* dotted grid background */}
-            <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'radial-gradient(#000 0.8px, transparent 0.8px)', backgroundSize: '18px 18px', backgroundPosition: '9px 9px' }} />
+            <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(#000 0.8px, transparent 0.8px)', backgroundSize: '18px 18px', backgroundPosition: '9px 9px' }} />
             <div className="relative">
               {children}
             </div>
           </div>
 
           {/* light glare */}
-          <div className="pointer-events-none absolute inset-0 rounded-[40px]" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.0) 40%)', mixBlendMode: 'screen' }} />
+          <div className="pointer-events-none absolute inset-0 rounded-[44px]" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.0) 40%)', mixBlendMode: 'screen' }} />
         </motion.div>
       </div>
     </motion.div>

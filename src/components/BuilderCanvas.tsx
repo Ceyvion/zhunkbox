@@ -72,9 +72,9 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
   return (
     <motion.div
       ref={setNodeRef}
-      whileTap={{ scale: 0.97 }}
+      whileTap={{ scale: 0.98 }}
       onClick={handleClick}
-      className={`relative aspect-square rounded-full border-[3px] border-dashed flex items-center justify-center text-xs sm:text-sm select-none ${filled ? 'bg-yellow-200 border-black' : 'border-black/40'} ${isOver ? 'ring-4 ring-black/30' : ''}`}
+      className={`slot ${filled ? 'slot--filled' : 'slot--empty'} ${isOver ? 'slot--over' : ''}`}
       aria-label={`Slot ${index} ${filled ? `with ${label}` : 'empty'}`}
       title={filled ? label : 'Click to place selected'}
     >
@@ -93,7 +93,7 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
             ) : null}
           </>
         ) : (
-          <motion.span key="empty" className="opacity-50">Slot</motion.span>
+          <motion.span key="empty" className="opacity-60 text-[10px] sm:text-xs">Tap to place</motion.span>
         )}
       </AnimatePresence>
     </motion.div>
