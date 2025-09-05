@@ -156,7 +156,8 @@ function App() {
   }
 
   function onRandomize() {
-    const count = Math.floor(slotCount * 0.4)
+    const inPack = Boolean(activePack)
+    const count = inPack ? Math.min(slotCount, trinkets.length) : Math.floor(slotCount * 0.4)
     const indices = [...Array(slotCount).keys()]
     // shuffle
     for (let i = indices.length - 1; i > 0; i--) {
@@ -167,15 +168,29 @@ function App() {
     const next: SlotMap = {}
     const nextStyle: SlotStyleMap = {}
     for (let i = 0; i < slotCount; i++) next[i] = null
-    for (const idx of chosen) {
-      const tr = trinkets[Math.floor(Math.random() * trinkets.length)]
-      next[idx] = tr.id
-      nextStyle[idx] = defaultStyle()
+    if (inPack) {
+      // Use each item from the active pack once (up to slotCount)
+      const pool = [...trinkets]
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[pool[i], pool[j]] = [pool[j], pool[i]]
+      }
+      pool.slice(0, count).forEach((t, i) => {
+        const idx = chosen[i]
+        next[idx] = t.id
+        nextStyle[idx] = defaultStyle()
+      })
+    } else {
+      for (const idx of chosen) {
+        const tr = trinkets[Math.floor(Math.random() * trinkets.length)]
+        next[idx] = tr.id
+        nextStyle[idx] = defaultStyle()
+      }
     }
     setSlots(next)
     setSlotStyles(nextStyle)
     setActiveSlot(null)
-    console.log('randomize')
+    console.log('randomize', { inPack, count })
   }
 
   function onCheckout() {
@@ -321,7 +336,7 @@ function App() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Builder</h2>
             <div className="flex items-center gap-2">
-              <button className="chip" onClick={onRandomize}>Randomize</button>
+              <button className="chip" title="Fill a few slots with random stickers (from this pack if selected)" onClick={onRandomize}>Randomize</button>
               <button className="chip" onClick={onReset}>Reset</button>
               <label className="chip cursor-pointer select-none">
                 <input
@@ -339,6 +354,14 @@ function App() {
                 Glitter
               </label>
             </div>
+          </div>
+
+          {/* Inline guidance */}
+          <div className="mb-3 text-xs sm:text-sm opacity-70">
+            {selectedId
+              ? 'Tap a slot to place your selected sticker. Drag to move.'
+              : 'Pick a sticker from the tray above, then tap a slot to place it. Drag to move; tap again for controls.'}
+            {activePack ? ' Randomize uses only the current pack.' : ''}
           </div>
 
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
