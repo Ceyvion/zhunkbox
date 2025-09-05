@@ -16,6 +16,7 @@ import { LandingPage } from './components/LandingPage'
 import { MobileGuide } from './components/MobileGuide'
 import { Coachmarks } from './components/Coachmarks'
 import { Modal } from './components/Modal'
+import { Toasts, type Toast } from './components/Toasts'
 
 type Route = { page: 'landing' | 'builder'; pack?: string }
 
@@ -67,6 +68,9 @@ function App() {
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [coachOpen, setCoachOpen] = useState(false)
+  const [toasts, setToasts] = useState<Toast[]>([])
+  const toastSeq = useRef(1)
   const confettiRef = useRef<import('canvas-confetti').CreateTypes | null>(null)
   const [query, setQuery] = useState('')
   const allTags = useMemo(() => Array.from(new Set(trinkets.flatMap(t => t.tags ?? []))).sort(), [trinkets])
@@ -93,6 +97,15 @@ function App() {
   useEffect(() => {
     saveStyles(slotStyles)
   }, [slotStyles])
+
+  function pushToast(text: string, variant: Toast['variant'] = 'info') {
+    const id = toastSeq.current++
+    const t: Toast = { id, text, variant }
+    setToasts((prev) => [...prev, t].slice(-3))
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((x) => x.id !== id))
+    }, 2200)
+  }
 
   // When pack changes, drop any placed trinkets not in the current pack
   useEffect(() => {
@@ -156,6 +169,10 @@ function App() {
       return next
     })
     console.log(id ? 'trinket_add' : 'trinket_remove', { index, id })
+    if (id) {
+      const name = trinkets.find(t => t.id === id)?.name ?? id
+      pushToast(`Placed ${name}`, 'success')
+    }
   }
 
   function onReset() {
@@ -167,6 +184,7 @@ function App() {
     resetStyles()
     setActiveSlot(null)
     console.log('reset')
+    pushToast('Cleared design')
   }
 
   function onRandomize() {
@@ -205,6 +223,7 @@ function App() {
     setSlotStyles(nextStyle)
     setActiveSlot(null)
     console.log('randomize', { inPack, count })
+    pushToast(`Randomized ${count} ${inPack ? 'from pack' : 'stickers'}`, 'success')
   }
 
   function onCheckout() {
@@ -316,6 +335,8 @@ function App() {
     // Re-select the removed trinket so it's easy to place again
     if (removed && trinkets.some(t => t.id === removed)) {
       setSelectedId(removed)
+      const name = trinkets.find(t => t.id === removed)?.name ?? removed
+      pushToast(`Removed ${name}`)
     }
     setActiveSlot(null)
   }
@@ -369,7 +390,7 @@ function App() {
           </div>
 
           {/* Guidance: rich mobile tip + subtle desktop text */}
-          <MobileGuide selectedId={selectedId} packName={activePack?.name} />
+          <MobileGuide selectedId={selectedId} packName={activePack?.name} suspend={coachOpen || checkoutOpen} />
           <div className="hidden sm:block mb-3 text-sm opacity-70">
             {selectedId
               ? 'Tip: Tap a slot to place your selected sticker. Drag to move; tap again for controls.'
@@ -378,7 +399,7 @@ function App() {
           </div>
 
           {/* Onboarding coachmarks (only when a pack is active) */}
-          <Coachmarks enabled={Boolean(activePack)} />
+          <Coachmarks enabled={Boolean(activePack)} onOpenChange={setCoachOpen} />
 
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
             <PhoneCase>
@@ -487,6 +508,8 @@ function App() {
           </ul>
         </div>
       </Modal>
+
+      <Toasts toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter(t => t.id !== id))} />
     </div>
   )
 }

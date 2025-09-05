@@ -7,7 +7,7 @@ type Step = {
   body: string
 }
 
-export function Coachmarks({ enabled }: { enabled: boolean }) {
+export function Coachmarks({ enabled, onOpenChange }: { enabled: boolean; onOpenChange?: (open: boolean) => void }) {
   const [open, setOpen] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
@@ -42,6 +42,8 @@ export function Coachmarks({ enabled }: { enabled: boolean }) {
       }
     } catch {}
   }, [enabled])
+
+  useEffect(() => { onOpenChange?.(open) }, [open, onOpenChange])
 
   useEffect(() => {
     if (!open) return

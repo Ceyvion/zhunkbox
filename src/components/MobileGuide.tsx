@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export function MobileGuide({ selectedId, packName }: { selectedId: string | null; packName?: string }) {
+export function MobileGuide({ selectedId, packName, suspend }: { selectedId: string | null; packName?: string; suspend?: boolean }) {
   const [dismissed, setDismissed] = useState<boolean>(() => {
     try { return localStorage.getItem('mobile_guide_v1') === '1' } catch { return false }
   })
@@ -10,7 +10,7 @@ export function MobileGuide({ selectedId, packName }: { selectedId: string | nul
     // No-op if dismissed
   }, [selectedId])
 
-  if (dismissed) return null
+  if (dismissed || suspend) return null
 
   const msgLines = selectedId
     ? [

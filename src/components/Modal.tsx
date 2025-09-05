@@ -18,6 +18,31 @@ export function Modal({ open, title, onClose, children, footer }: Props) {
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
+  // Focus trap + restore
+  useEffect(() => {
+    if (!open) return
+    const prev = document.activeElement as HTMLElement | null
+    const card = document.querySelector('.modal-card') as HTMLElement | null
+    const focusables = card?.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+    focusables && focusables[0]?.focus()
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab' || !focusables || focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      prev && prev.focus()
+    }
+  }, [open])
+
   return (
     <AnimatePresence>
       {open ? (
@@ -63,4 +88,3 @@ export function Modal({ open, title, onClose, children, footer }: Props) {
     </AnimatePresence>
   )
 }
-
