@@ -91,6 +91,15 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
                 onClose={() => onSelect(null)}
               />
             ) : null}
+            {active ? (
+              <ControlsMobile
+                index={index}
+                style={style}
+                onStyleChange={onStyleChange}
+                onRemove={onRemove}
+                onClose={() => onSelect(null)}
+              />
+            ) : null}
           </>
         ) : (
           <motion.span key="empty" className="opacity-60 text-[10px] sm:text-xs">Tap to place</motion.span>
@@ -146,7 +155,7 @@ function Controls({ index, style, onStyleChange, onRemove, onClose }: {
       initial={{ opacity: 0, scale: 0.9, y: -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9, y: -6 }}
-      className="absolute -top-2 -right-2 z-10 bg-white border border-black shadow-[3px_3px_0_#000] rounded-lg p-2 flex gap-1"
+      className="hidden sm:flex absolute -top-2 -right-2 z-10 bg-white border border-black shadow-[3px_3px_0_#000] rounded-lg p-2 gap-1"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
@@ -172,5 +181,32 @@ function CtrlButton({ children, onClick, label }: { children: any; onClick: () =
     >
       {children}
     </button>
+  )
+}
+
+function ControlsMobile({ index, style, onStyleChange, onRemove, onClose }: {
+  index: number
+  style?: StickerStyle
+  onStyleChange: (i: number, partial: Partial<StickerStyle>) => void
+  onRemove: (i: number) => void
+  onClose: () => void
+}) {
+  const s = style ?? { scale: 1, rotate: 0, depth: 1.2 }
+  function stop(e: any) { e.stopPropagation() }
+  return (
+    <div className="sm:hidden fixed left-0 right-0 bottom-0 z-50 px-2 pb-[calc(env(safe-area-inset-bottom,0)+8px)]" role="dialog" aria-label="Sticker controls" onClick={stop} onMouseDown={stop}>
+      <div className="mx-auto max-w-[520px] paper rounded-t-xl rounded-b-none border-b-0 shadow-[0_-4px_0_#000] p-2 bg-white">
+        <div className="flex items-center justify-between gap-1">
+          <button className="chip w-10 h-10 p-0" aria-label="Rotate -15 degrees" onClick={() => onStyleChange(index, { rotate: s.rotate - 15 })}>↺</button>
+          <button className="chip w-10 h-10 p-0" aria-label="Rotate +15 degrees" onClick={() => onStyleChange(index, { rotate: s.rotate + 15 })}>↻</button>
+          <button className="chip w-10 h-10 p-0" aria-label="Smaller" onClick={() => onStyleChange(index, { scale: s.scale - 0.1 })}>−</button>
+          <button className="chip w-10 h-10 p-0" aria-label="Bigger" onClick={() => onStyleChange(index, { scale: s.scale + 0.1 })}>＋</button>
+          <button className="chip w-10 h-10 p-0" aria-label="Depth down" onClick={() => onStyleChange(index, { depth: Math.max(0, (s.depth ?? 1.2) - 0.2) })}>⬇︎</button>
+          <button className="chip w-10 h-10 p-0" aria-label="Depth up" onClick={() => onStyleChange(index, { depth: (s.depth ?? 1.2) + 0.2 })}>⬆︎</button>
+          <button className="chip w-10 h-10 p-0 bg-red-100" aria-label="Delete" onClick={() => onRemove(index)}>✕</button>
+          <button className="chip w-10 h-10 p-0" aria-label="Close" onClick={onClose}>⤫</button>
+        </div>
+      </div>
+    </div>
   )
 }

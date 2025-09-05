@@ -102,3 +102,13 @@ body {
     0 0 0 6px rgba(0,0,0,0.15),
     3px 3px 0 #000 !important;
 }
+
+/* Packs page polish */
+.pack-card {
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+.pack-card:hover { transform: translateY(-1px) rotate(-0.5deg); box-shadow: 4px 4px 0 #000; }
+.pack-card:active { transform: translateY(1px); }
+
+@keyframes floatY { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
+.float-y { animation: floatY 3.6s ease-in-out infinite; }
