@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* App globals */
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply text-black;
+  background: repeating-linear-gradient(
+      0deg,
+      #f7f5f2,
+      #f7f5f2 3px,
+      #f6f3ef 3px,
+      #f6f3ef 6px
+    );
+}
+
+.paper {
+  @apply bg-white rounded-lg shadow-[3px_3px_0_#000] border border-black;
+}
+
+.chip {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full border border-black shadow-[2px_2px_0_#000] bg-white hover:shadow-[3px_3px_0_#000] active:translate-x-[1px] active:translate-y-[1px] transition;
+}
+
+.tape-btn {
+  @apply relative inline-flex items-center justify-center font-bold border border-black shadow-[3px_3px_0_#000] bg-[#fef08a] px-4 py-2 rounded-md transition;
+}
+.tape-btn::before,
+.tape-btn::after {
+  content: "";
+  position: absolute;
+  width: 36px;
+  height: 12px;
+  background: #fde68a;
+  border: 1px solid #000;
+  box-shadow: 2px 2px 0 #000;
+  top: -8px;
+}
+.tape-btn::before { left: 8px; transform: rotate(-8deg); }
+.tape-btn::after { right: 8px; transform: rotate(6deg); }
+
+.wonky {
+  transform: rotate(var(--r, -1deg));
+}
+
+/* 2.5D sticker look for icons */
+.sticker {
+  @apply inline-flex items-center justify-center bg-white border border-black rounded-full p-1.5 relative;
+  filter: drop-shadow(2px 2px 0 #000) drop-shadow(4px 4px 0 #000);
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.sticker::after {
+  /* glossy highlight */
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: radial-gradient(120px 50px at 24% 20%, rgba(255,255,255,0.7), rgba(255,255,255,0) 60%);
+  mix-blend-mode: screen;
+}
+.sticker:hover { transform: translate(-1px, -1px) rotate(-1deg); }
+.sticker:active { transform: translate(1px, 1px); filter: drop-shadow(1px 1px 0 #000) drop-shadow(2px 2px 0 #000); }

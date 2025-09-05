@@ -1,0 +1,350 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { SlotMap, SlotStyleMap, StickerStyle, Trinket } from './types'
+import catalog from './data/catalog.json'
+import { loadDesign, saveDesign, resetDesign, loadStyles, saveStyles, resetStyles, defaultStyle, normalizeStyle } from './lib/storage'
+import { BuilderCanvas } from './components/BuilderCanvas'
+import { TrinketTray } from './components/TrinketTray'
+import { CheckoutBar } from './components/CheckoutBar'
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { clsx } from 'clsx'
+import ReactCanvasConfetti from 'react-canvas-confetti'
+import { GlitterOverlay } from './components/GlitterOverlay'
+import { PhoneCase } from './components/PhoneCase'
+import { CutoutTitle } from './components/CutoutTitle'
+
+function App() {
+  const trinkets = catalog.trinkets as Trinket[]
+  const trinketMap = useMemo(() => Object.fromEntries(trinkets.map(t => [t.id, t])), [trinkets])
+  const casePrice = catalog.casePrice
+  const MAX_BUDGET = 100
+  const maxPrice = useMemo(() => trinkets.reduce((m, t) => Math.max(m, t.price), 0), [trinkets])
+  const allowedSlots = Math.max(12, Math.floor((MAX_BUDGET - casePrice) / maxPrice))
+  const cols = 4
+  const rows = Math.ceil(allowedSlots / cols)
+  const slotCount = cols * rows
+
+  const [slots, setSlots] = useState<SlotMap>(() => loadDesign(slotCount))
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [slotStyles, setSlotStyles] = useState<SlotStyleMap>(() => loadStyles())
+  const [activeSlot, setActiveSlot] = useState<number | null>(null)
+  const [glitter, setGlitter] = useState(false)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+  const [isUnlocked, setIsUnlocked] = useState(false)
+  const confettiRef = useRef<import('canvas-confetti').CreateTypes | null>(null)
+  const [query, setQuery] = useState('')
+  const allTags = useMemo(() => Array.from(new Set(trinkets.flatMap(t => t.tags ?? []))).sort(), [trinkets])
+  const [activeTag, setActiveTag] = useState<string>('')
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  )
+
+  useEffect(() => {
+    saveDesign(slots)
+  }, [slots])
+
+  useEffect(() => {
+    saveStyles(slotStyles)
+  }, [slotStyles])
+
+  const placedCount = useMemo(
+    () => Object.values(slots).filter(Boolean).length,
+    [slots]
+  )
+
+  const items = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const id of Object.values(slots)) {
+      if (!id) continue
+      counts[id] = (counts[id] ?? 0) + 1
+    }
+    return Object.entries(counts).map(([id, qty]) => ({ id, qty }))
+  }, [slots])
+
+  const filteredTrinkets = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return trinkets.filter(t => {
+      const matchesQ = !q || t.name.toLowerCase().includes(q) || t.id.includes(q)
+      const matchesTag = !activeTag || (t.tags ?? []).includes(activeTag)
+      return matchesQ && matchesTag
+    })
+  }, [trinkets, query, activeTag])
+
+  const total = useMemo(() => {
+    let t = casePrice
+    for (const { id, qty } of items) {
+      const price = trinkets.find((t) => t.id === id)?.price ?? 0
+      t += price * qty
+    }
+    return Number(t.toFixed(2))
+  }, [items, casePrice, trinkets])
+
+  function placeAt(index: number, id: string | null) {
+    setSlots((prev) => ({ ...prev, [index]: id }))
+    setActiveSlot(id ? index : null)
+    setSlotStyles((prev) => {
+      const next = { ...prev }
+      if (id) next[index] = defaultStyle()
+      else delete next[index]
+      return next
+    })
+    console.log(id ? 'trinket_add' : 'trinket_remove', { index, id })
+  }
+
+  function onReset() {
+    const cleared: SlotMap = {}
+    for (let i = 0; i < slotCount; i++) cleared[i] = null
+    setSlots(cleared)
+    resetDesign()
+    setSlotStyles({})
+    resetStyles()
+    setActiveSlot(null)
+    console.log('reset')
+  }
+
+  function onRandomize() {
+    const count = Math.floor(slotCount * 0.4)
+    const indices = [...Array(slotCount).keys()]
+    // shuffle
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[indices[i], indices[j]] = [indices[j], indices[i]]
+    }
+    const chosen = indices.slice(0, count)
+    const next: SlotMap = {}
+    const nextStyle: SlotStyleMap = {}
+    for (let i = 0; i < slotCount; i++) next[i] = null
+    for (const idx of chosen) {
+      const tr = trinkets[Math.floor(Math.random() * trinkets.length)]
+      next[idx] = tr.id
+      nextStyle[idx] = defaultStyle()
+    }
+    setSlots(next)
+    setSlotStyles(nextStyle)
+    setActiveSlot(null)
+    console.log('randomize')
+  }
+
+  function onCheckout() {
+    const payload = {
+      caseModel: 'iphone-15-pro',
+      slots,
+      items,
+      total,
+    }
+    alert('Mock checkout payload:\n' + JSON.stringify(payload, null, 2))
+    console.log('checkout_start', payload)
+  }
+
+  // Gate unlock confetti
+  useEffect(() => {
+    const unlocked = placedCount >= 3
+    if (unlocked && !isUnlocked) {
+      setIsUnlocked(true)
+      // Fire confetti burst
+      confettiRef.current && confettiRef.current({
+        particleCount: 140,
+        spread: 70,
+        startVelocity: 35,
+        decay: 0.88,
+        origin: { y: 0.6 },
+        scalar: 0.8,
+      })
+      console.log('checkout_unlocked')
+    }
+    if (!unlocked && isUnlocked) setIsUnlocked(false)
+  }, [placedCount, isUnlocked])
+
+  const [draggingFromIndex, setDraggingFromIndex] = useState<number | null>(null)
+
+  function onDragStart(e: any) {
+    const id = String(e.active.id)
+    if (id.startsWith('trinket:')) setDraggingId(id.split(':')[1])
+    if (id.startsWith('slotitem:')) {
+      const idx = Number(id.split(':')[1])
+      setDraggingFromIndex(idx)
+      const current = slots[idx]
+      if (current) setDraggingId(current)
+    }
+  }
+
+  function onDragOver() {
+    // highlight handled in children via dnd-kit over state if needed
+  }
+
+  function onDragEnd(e: any) {
+    const overId = e.over?.id
+    if (overId && String(overId).startsWith('slot:')) {
+      const idxTo = Number(String(overId).split(':')[1])
+      if (draggingId != null) {
+        setSlots((prev) => {
+          const next = { ...prev }
+          if (draggingFromIndex != null && draggingFromIndex !== idxTo) {
+            const from = draggingFromIndex
+            const destVal = next[idxTo] ?? null
+            next[idxTo] = draggingId
+            next[from] = destVal
+            // swap styles alongside items
+            setSlotStyles((s) => {
+              const ns: SlotStyleMap = { ...s }
+              const fromStyle = ns[from]
+              const toStyle = ns[idxTo]
+              if (fromStyle) ns[idxTo] = fromStyle
+              else delete ns[idxTo]
+              if (toStyle) ns[from] = toStyle
+              else delete ns[from]
+              return ns
+            })
+            setActiveSlot(idxTo)
+          } else {
+            next[idxTo] = draggingId
+            // move style from origin if applicable else default
+            setSlotStyles((s) => {
+              const ns: SlotStyleMap = { ...s }
+              if (draggingFromIndex != null) {
+                if (ns[draggingFromIndex]) {
+                  ns[idxTo] = ns[draggingFromIndex]
+                  delete ns[draggingFromIndex]
+                } else {
+                  ns[idxTo] = defaultStyle()
+                }
+              } else {
+                ns[idxTo] = defaultStyle()
+              }
+              return ns
+            })
+            setActiveSlot(idxTo)
+          }
+          return next
+        })
+      }
+    }
+    setDraggingFromIndex(null)
+    setDraggingId(null)
+  }
+
+  function updateStyle(index: number, partial: Partial<StickerStyle>) {
+    setSlotStyles((prev) => {
+      const current = prev[index] ?? defaultStyle()
+      return { ...prev, [index]: normalizeStyle({ ...current, ...partial }) }
+    })
+  }
+
+  function removeAt(index: number) {
+    setSlots((prev) => ({ ...prev, [index]: null }))
+    setSlotStyles((prev) => {
+      const next = { ...prev }
+      delete next[index]
+      return next
+    })
+    setActiveSlot(null)
+  }
+
+  return (
+    <div className="min-h-full p-4 sm:p-6 relative overflow-hidden">
+      <GlitterOverlay enabled={glitter} />
+      <ReactCanvasConfetti onInit={({ confetti }) => (confettiRef.current = confetti)} style={{ position: 'fixed', pointerEvents: 'none', inset: 0 }} />
+      <header className="mb-4 flex items-center justify-between">
+        <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
+        <span className="text-sm opacity-70">v0.1 prototype</span>
+      </header>
+
+      <main className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_340px]">
+        <section className="paper p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold">Builder</h2>
+            <div className="flex items-center gap-2">
+              <button className="chip" onClick={onRandomize}>Randomize</button>
+              <button className="chip" onClick={onReset}>Reset</button>
+              <label className="chip cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="mr-1"
+                  checked={glitter}
+                  onChange={(e) => {
+                    setGlitter(e.target.checked)
+                    if (e.target.checked && confettiRef.current) {
+                      confettiRef.current({ particleCount: 60, spread: 60, origin: { y: 0.4 }, scalar: 0.7 })
+                    }
+                    console.log('glitter_toggle', { enabled: e.target.checked })
+                  }}
+                />
+                Glitter
+              </label>
+            </div>
+          </div>
+
+          <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
+            <PhoneCase>
+              <BuilderCanvas
+                cols={cols}
+                rows={rows}
+                slotCount={slotCount}
+                slots={slots}
+                slotStyles={slotStyles}
+                selectedId={selectedId}
+                activeSlot={activeSlot}
+                onSelectSlot={setActiveSlot}
+                onPlace={placeAt}
+                onRemove={removeAt}
+                onStyleChange={updateStyle}
+                trinketMap={trinketMap}
+              />
+            </PhoneCase>
+            <DragOverlay dropAnimation={{ duration: 150 }}>
+              {draggingId ? (
+                <div className={clsx('chip wonky', 'bg-yellow-200 scale-110')} style={{ ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}>
+                  <span className="inline-flex items-center gap-2">
+                    {trinketMap[draggingId]?.icon ? (
+                      <img src={trinketMap[draggingId].icon!} alt="" className="w-5 h-5" />
+                    ) : null}
+                    <span className="font-semibold">{trinketMap[draggingId]?.name ?? draggingId}</span>
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        </section>
+
+        <aside className="space-y-4">
+          <section className="paper p-4 sm:p-5">
+            <h2 className="font-semibold mb-2">Sticker Tray</h2>
+            <div className="mb-3 flex gap-2 items-center">
+              <input
+                placeholder="Search"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                className="chip w-full bg-white focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <button className={`chip ${activeTag === '' ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag('')}>All</button>
+              {allTags.map(tag => (
+                <button key={tag} className={`chip ${activeTag === tag ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag(tag)}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+            <div className="max-h-[60vh] overflow-auto pr-1">
+            <TrinketTray
+              trinkets={filteredTrinkets}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+            </div>
+          </section>
+
+          <CheckoutBar
+            placedCount={placedCount}
+            minReq={3}
+            total={total}
+            budget={MAX_BUDGET}
+            onCheckout={onCheckout}
+          />
+        </aside>
+      </main>
+    </div>
+  )
+}
+
+export default App
