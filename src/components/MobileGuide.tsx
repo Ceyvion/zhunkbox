@@ -12,21 +12,34 @@ export function MobileGuide({ selectedId, packName }: { selectedId: string | nul
 
   if (dismissed) return null
 
-  const msg = selectedId
-    ? 'Tap a slot to place • Drag to move • Bottom bar for controls'
-    : `Pick a sticker from the tray above, then tap a slot to place${packName ? ` • Randomize uses only ${packName}` : ''}`
+  const msgLines = selectedId
+    ? [
+        'Tap a slot to place',
+        'Drag to move',
+        'Use the bottom bar to tweak',
+      ]
+    : [
+        'Pick a sticker from the tray above',
+        'Then tap a slot to place it',
+        packName ? `Randomize uses only ${packName}` : '',
+      ].filter(Boolean)
 
   return (
-    <div className="sm:hidden sticky top-2 z-40 px-1">
-      <div className="tip-banner wonky" style={{ ['--r' as any]: '-0.6deg' }}>
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden>✨</span>
-          <span className="font-semibold">Cute tip:</span>
-          <span className="opacity-90">{msg}</span>
-        </span>
-        <button className="chip ml-2 px-2 py-0 h-7" onClick={() => { try { localStorage.setItem('mobile_guide_v1', '1') } catch {} ; setDismissed(true) }}>Got it</button>
+    <div className="sm:hidden sticky top-2 z-40 px-2">
+      <div className="tip-banner wonky mx-auto max-w-[520px]" style={{ ['--r' as any]: '-0.6deg' }} aria-live="polite">
+        <div className="flex items-center gap-2 mb-1">
+          <span aria-hidden className="text-base">✨</span>
+          <span className="font-semibold">Cute tip</span>
+        </div>
+        <div className="text-[13px] leading-snug">
+          {msgLines.map((line, i) => (
+            <div key={i} className="truncate whitespace-normal break-words">{line}</div>
+          ))}
+        </div>
+        <div className="mt-2 flex justify-end">
+          <button className="chip px-3 py-1 h-8 text-xs" onClick={() => { try { localStorage.setItem('mobile_guide_v1', '1') } catch {} ; setDismissed(true) }}>Got it</button>
+        </div>
       </div>
     </div>
   )
 }
-
