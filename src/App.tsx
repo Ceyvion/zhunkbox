@@ -279,7 +279,6 @@ function App() {
               <BuilderCanvas
                 cols={cols}
                 rows={rows}
-                slotCount={slotCount}
                 slots={slots}
                 slotStyles={slotStyles}
                 selectedId={selectedId}

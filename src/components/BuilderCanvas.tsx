@@ -5,7 +5,6 @@ import { useDroppable, useDraggable } from '@dnd-kit/core'
 type Props = {
   cols: number
   rows: number
-  slotCount: number
   slots: SlotMap
   slotStyles: SlotStyleMap
   selectedId: string | null
@@ -17,7 +16,7 @@ type Props = {
   trinketMap: Record<string, Trinket>
 }
 
-export function BuilderCanvas({ cols, rows, slotCount, slots, slotStyles, selectedId, activeSlot, onSelectSlot, onPlace, onRemove, onStyleChange, trinketMap }: Props) {
+export function BuilderCanvas({ cols, rows, slots, slotStyles, selectedId, activeSlot, onSelectSlot, onPlace, onRemove, onStyleChange, trinketMap }: Props) {
 
   return (
     <div>
