@@ -14,6 +14,7 @@ import { PhoneCase } from './components/PhoneCase'
 import { CutoutTitle } from './components/CutoutTitle'
 import { LandingPage } from './components/LandingPage'
 import { MobileGuide } from './components/MobileGuide'
+import { Coachmarks } from './components/Coachmarks'
 
 type Route = { page: 'landing' | 'builder'; pack?: string }
 
@@ -343,7 +344,7 @@ function App() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Builder</h2>
             <div className="flex items-center gap-2">
-              <button className="chip" title="Fill a few slots with random stickers (from this pack if selected)" onClick={onRandomize}>Randomize</button>
+              <button id="btn-randomize" className="chip" title="Fill a few slots with random stickers (from this pack if selected)" onClick={onRandomize}>Randomize</button>
               <button className="chip" onClick={onReset}>Reset</button>
               <label className="chip cursor-pointer select-none">
                 <input
@@ -372,21 +373,26 @@ function App() {
             {activePack ? ' Randomize uses only the current pack.' : ''}
           </div>
 
+          {/* Onboarding coachmarks (only when a pack is active) */}
+          <Coachmarks enabled={Boolean(activePack)} />
+
           <DndContext sensors={sensors} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
             <PhoneCase>
-              <BuilderCanvas
-                cols={cols}
-                rows={rows}
-                slots={slots}
-                slotStyles={slotStyles}
-                selectedId={selectedId}
-                activeSlot={activeSlot}
-                onSelectSlot={setActiveSlot}
-                onPlace={placeAt}
-                onRemove={removeAt}
-                onStyleChange={updateStyle}
-                trinketMap={trinketMap}
-              />
+              <div id="case-area">
+                <BuilderCanvas
+                  cols={cols}
+                  rows={rows}
+                  slots={slots}
+                  slotStyles={slotStyles}
+                  selectedId={selectedId}
+                  activeSlot={activeSlot}
+                  onSelectSlot={setActiveSlot}
+                  onPlace={placeAt}
+                  onRemove={removeAt}
+                  onStyleChange={updateStyle}
+                  trinketMap={trinketMap}
+                />
+              </div>
             </PhoneCase>
             <DragOverlay dropAnimation={{ duration: 150 }}>
               {draggingId ? (
@@ -404,7 +410,7 @@ function App() {
         </section>
 
         <aside className="space-y-4 order-1 md:order-2">
-          <section className="paper p-4 sm:p-5 sticky top-2 md:static z-30">
+          <section id="tray" className="paper p-4 sm:p-5 sticky top-2 md:static z-30">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h2 className="font-semibold">Sticker Tray</h2>
               <button

@@ -117,3 +117,9 @@ body {
 .tip-banner {
   @apply w-full border-2 border-black rounded-2xl shadow-[3px_3px_0_#000] bg-[#fff4b8] px-4 py-3 text-black;
 }
+
+/* Coachmarks overlay */
+.coach-overlay { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+.coach-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); pointer-events: auto; border: 0; }
+.coach-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 3px #000, 0 0 0 9999px rgba(0,0,0,0.35); background: rgba(255,255,255,0.8); pointer-events: none; }
+.coach-tip { pointer-events: auto; }
