@@ -38,7 +38,7 @@ function DraggableChip({ id, name, price, icon, active, onClick }: { id: string;
       {...attributes}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`chip justify-between wonky ${active ? 'bg-yellow-200' : ''} ${isDragging ? 'opacity-60' : ''}`}
+      className={`chip justify-between wonky py-2 sm:py-1 ${active ? 'bg-yellow-200' : ''} ${isDragging ? 'opacity-60' : ''}`}
       title={`$${price.toFixed(2)}`}
       style={{ ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}
     >

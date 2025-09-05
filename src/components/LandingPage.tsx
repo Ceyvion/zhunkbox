@@ -59,8 +59,8 @@ function PackCard({ pack, tMap, onChoose }: { pack: Pack; tMap: Record<string, T
         <IconStack icons={icons} />
         <span className="text-xs opacity-70">{pack.trinkets.length} items</span>
       </div>
-      <div className="mt-auto flex items-center justify-between gap-2">
-        <button className="chip" onClick={onChoose}>Design with this pack</button>
+      <div className="mt-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+        <button className="tape-btn w-full sm:w-auto" onClick={onChoose}>Design with this pack</button>
         <div className="hidden sm:flex gap-1">
           {pack.trinkets.slice(0,6).map(id => (
             <img key={id} src={tMap[id]?.icon} alt="" className="w-6 h-6" />
@@ -91,4 +91,3 @@ function position(i: number) {
     default: return 'right-4 bottom-1';
   }
 }
-
