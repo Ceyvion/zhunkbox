@@ -68,6 +68,7 @@ function App() {
   const [query, setQuery] = useState('')
   const allTags = useMemo(() => Array.from(new Set(trinkets.flatMap(t => t.tags ?? []))).sort(), [trinkets])
   const [activeTag, setActiveTag] = useState<string>('')
+  const [trayOpen, setTrayOpen] = useState(true)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -403,30 +404,42 @@ function App() {
         </section>
 
         <aside className="space-y-4 order-1 md:order-2">
-          <section className="paper p-4 sm:p-5">
-            <h2 className="font-semibold mb-2">Sticker Tray</h2>
-            <div className="mb-3 flex gap-2 items-center">
-              <input
-                placeholder="Search"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                className="chip w-full bg-white focus:outline-none"
-              />
+          <section className="paper p-4 sm:p-5 sticky top-2 md:static z-30">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h2 className="font-semibold">Sticker Tray</h2>
+              <button
+                className="chip sm:hidden"
+                aria-expanded={trayOpen}
+                aria-controls="tray-content"
+                onClick={() => setTrayOpen(v => !v)}
+              >
+                {trayOpen ? 'Hide' : 'Show'}
+              </button>
             </div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              <button className={`chip ${activeTag === '' ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag('')}>All</button>
-              {allTags.map(tag => (
-                <button key={tag} className={`chip ${activeTag === tag ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag(tag)}>
-                  {tag}
-                </button>
-              ))}
-            </div>
-            <div className="max-h-[40vh] sm:max-h-[60vh] overflow-auto pr-1">
-            <TrinketTray
-              trinkets={filteredTrinkets}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
+            <div id="tray-content" className={`${trayOpen ? '' : 'hidden sm:block'}`}>
+              <div className="mb-3 flex gap-2 items-center">
+                <input
+                  placeholder="Search"
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="chip w-full bg-white focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button className={`chip ${activeTag === '' ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag('')}>All</button>
+                {allTags.map(tag => (
+                  <button key={tag} className={`chip ${activeTag === tag ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag(tag)}>
+                    {tag}
+                  </button>
+                ))}
+              </div>
+              <div className="max-h-[40vh] sm:max-h-[60vh] overflow-auto pr-1">
+                <TrinketTray
+                  trinkets={filteredTrinkets}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                />
+              </div>
             </div>
           </section>
 
