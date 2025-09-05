@@ -13,6 +13,7 @@ import { GlitterOverlay } from './components/GlitterOverlay'
 import { PhoneCase } from './components/PhoneCase'
 import { CutoutTitle } from './components/CutoutTitle'
 import { LandingPage } from './components/LandingPage'
+import { MobileGuide } from './components/MobileGuide'
 
 type Route = { page: 'landing' | 'builder'; pack?: string }
 
@@ -356,11 +357,12 @@ function App() {
             </div>
           </div>
 
-          {/* Inline guidance */}
-          <div className="mb-3 text-xs sm:text-sm opacity-70">
+          {/* Guidance: rich mobile tip + subtle desktop text */}
+          <MobileGuide selectedId={selectedId} packName={activePack?.name} />
+          <div className="hidden sm:block mb-3 text-sm opacity-70">
             {selectedId
-              ? 'Tap a slot to place your selected sticker. Drag to move.'
-              : 'Pick a sticker from the tray above, then tap a slot to place it. Drag to move; tap again for controls.'}
+              ? 'Tip: Tap a slot to place your selected sticker. Drag to move; tap again for controls.'
+              : 'Tip: Pick a sticker from the tray, then tap a slot to place it. Drag to move; tap again for controls.'}
             {activePack ? ' Randomize uses only the current pack.' : ''}
           </div>
 

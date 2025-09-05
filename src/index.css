@@ -112,3 +112,8 @@ body {
 
 @keyframes floatY { 0% { transform: translateY(0); } 50% { transform: translateY(-4px); } 100% { transform: translateY(0); } }
 .float-y { animation: floatY 3.6s ease-in-out infinite; }
+
+/* Cute tip banner */
+.tip-banner {
+  @apply flex items-center justify-between w-full border border-black rounded-full shadow-[3px_3px_0_#000] bg-[#fff7b1] px-3 py-2;
+}
