@@ -300,12 +300,17 @@ function App() {
   }
 
   function removeAt(index: number) {
+    const removed = slots[index] ?? null
     setSlots((prev) => ({ ...prev, [index]: null }))
     setSlotStyles((prev) => {
       const next = { ...prev }
       delete next[index]
       return next
     })
+    // Re-select the removed trinket so it's easy to place again
+    if (removed && trinkets.some(t => t.id === removed)) {
+      setSelectedId(removed)
+    }
     setActiveSlot(null)
   }
 
