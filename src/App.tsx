@@ -93,6 +93,13 @@ function App() {
     })
   }, [trinkets])
 
+  // Clear selection if it doesn't exist in current pack
+  useEffect(() => {
+    if (selectedId && !trinkets.some(t => t.id === selectedId)) {
+      setSelectedId(null)
+    }
+  }, [trinkets, selectedId])
+
   const placedCount = useMemo(
     () => Object.values(slots).filter(Boolean).length,
     [slots]
