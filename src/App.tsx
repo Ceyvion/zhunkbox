@@ -317,7 +317,7 @@ function App() {
       </header>
 
       <main className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_340px]">
-        <section className="paper p-4 sm:p-6">
+        <section className="paper p-4 sm:p-6 order-2 md:order-1">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Builder</h2>
             <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ function App() {
           </DndContext>
         </section>
 
-        <aside className="space-y-4">
+        <aside className="space-y-4 order-1 md:order-2">
           <section className="paper p-4 sm:p-5">
             <h2 className="font-semibold mb-2">Sticker Tray</h2>
             <div className="mb-3 flex gap-2 items-center">
@@ -391,7 +391,7 @@ function App() {
                 </button>
               ))}
             </div>
-            <div className="max-h-[60vh] overflow-auto pr-1">
+            <div className="max-h-[40vh] sm:max-h-[60vh] overflow-auto pr-1">
             <TrinketTray
               trinkets={filteredTrinkets}
               selectedId={selectedId}
