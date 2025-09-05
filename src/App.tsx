@@ -301,6 +301,9 @@ function App() {
       <header className="mb-4 flex items-center justify-between">
         <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
         <div className="flex items-center gap-2">
+          {activePack ? (
+            <span className="chip bg-yellow-200">Pack: {activePack.name}</span>
+          ) : null}
           <button className="chip" onClick={() => navigate('#/')}>← Packs</button>
           <span className="text-sm opacity-70">v0.2 prototype</span>
         </div>
