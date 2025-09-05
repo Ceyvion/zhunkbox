@@ -1,0 +1,73 @@
+[
+  {
+    "id": "kawaii_animals",
+    "name": "Kawaii Animals",
+    "description": "Soft friends for maximum cute vibes.",
+    "trinkets": [
+      "kawaii-panda",
+      "kawaii-shiba",
+      "kawaii-bunny",
+      "kawaii-bear-pink",
+      "cat",
+      "bunny",
+      "bear"
+    ]
+  },
+  {
+    "id": "sweet_treats",
+    "name": "Sweet Treats",
+    "description": "Desserts and drinks to sugar-coat your day.",
+    "trinkets": [
+      "cookie",
+      "kawaii-boba",
+      "kawaii-milk",
+      "kawaii-mochi",
+      "kawaii-dumpling",
+      "kawaii-strawberry",
+      "kawaii-peach"
+    ]
+  },
+  {
+    "id": "celestial_sparkle",
+    "name": "Celestial Sparkle",
+    "description": "Stars, moons, and shiny things from the sky.",
+    "trinkets": [
+      "star",
+      "sparkle",
+      "moon",
+      "sun",
+      "rainbow",
+      "diamond",
+      "planet"
+    ]
+  },
+  {
+    "id": "emoji_mix",
+    "name": "Emoji Mix",
+    "description": "Expressive faces for every mood.",
+    "trinkets": [
+      "emoji-blush",
+      "emoji-star-eyes",
+      "emoji-cry-happy",
+      "emoji-sparkle-heart",
+      "emoji-peek",
+      "emoji-kitty",
+      "smile"
+    ]
+  },
+  {
+    "id": "letters_numbers",
+    "name": "Letters + Numbers",
+    "description": "Personalize with initials or lucky digits.",
+    "trinkets": [
+      "letter-a",
+      "letter-b",
+      "letter-c",
+      "num-1",
+      "num-2",
+      "num-3",
+      "heart"
+    ]
+  }
+]
+

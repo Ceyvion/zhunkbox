@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SlotMap, SlotStyleMap, StickerStyle, Trinket } from './types'
 import catalog from './data/catalog.json'
+import packs from './data/packs.json'
 import { loadDesign, saveDesign, resetDesign, loadStyles, saveStyles, resetStyles, defaultStyle, normalizeStyle } from './lib/storage'
 import { BuilderCanvas } from './components/BuilderCanvas'
 import { TrinketTray } from './components/TrinketTray'
@@ -11,9 +12,41 @@ import ReactCanvasConfetti from 'react-canvas-confetti'
 import { GlitterOverlay } from './components/GlitterOverlay'
 import { PhoneCase } from './components/PhoneCase'
 import { CutoutTitle } from './components/CutoutTitle'
+import { LandingPage } from './components/LandingPage'
+
+type Route = { page: 'landing' | 'builder'; pack?: string }
+
+function parseHash(): Route {
+  const h = window.location.hash || '#/'
+  const [path, query = ''] = h.slice(1).split('?')
+  const params = new URLSearchParams(query)
+  if (path === '/builder') {
+    return { page: 'builder', pack: params.get('pack') || undefined }
+  }
+  return { page: 'landing' }
+}
+
+function navigate(to: string) {
+  window.location.hash = to
+}
 
 function App() {
-  const trinkets = catalog.trinkets as Trinket[]
+  const [route, setRoute] = useState<Route>(() => parseHash())
+  useEffect(() => {
+    function onHash() { setRoute(parseHash()) }
+    window.addEventListener('hashchange', onHash)
+    if (!window.location.hash) navigate('#/')
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  const allTrinkets = catalog.trinkets as Trinket[]
+  const activePack = (packs as any[]).find((p) => p.id === route.pack)
+  const trinkets = useMemo(() => {
+    if (route.page !== 'builder') return allTrinkets
+    if (!activePack) return allTrinkets
+    const set = new Set(activePack.trinkets as string[])
+    return allTrinkets.filter(t => set.has(t.id))
+  }, [route, activePack, allTrinkets])
   const trinketMap = useMemo(() => Object.fromEntries(trinkets.map(t => [t.id, t])), [trinkets])
   const casePrice = catalog.casePrice
   const MAX_BUDGET = 100
@@ -46,6 +79,19 @@ function App() {
   useEffect(() => {
     saveStyles(slotStyles)
   }, [slotStyles])
+
+  // When pack changes, drop any placed trinkets not in the current pack
+  useEffect(() => {
+    const tset = new Set(trinkets.map(t => t.id))
+    setSlots(prev => {
+      let changed = false
+      const next: SlotMap = { ...prev }
+      for (const [k, v] of Object.entries(prev)) {
+        if (v && !tset.has(v)) { next[Number(k)] = null; changed = true }
+      }
+      return changed ? next : prev
+    })
+  }, [trinkets])
 
   const placedCount = useMemo(
     () => Object.values(slots).filter(Boolean).length,
@@ -240,13 +286,24 @@ function App() {
     setActiveSlot(null)
   }
 
+  if (route.page === 'landing') {
+    return (
+      <div className="min-h-full p-4 sm:p-6">
+        <LandingPage onChoose={(id) => navigate(`#/builder?pack=${id}`)} />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-full p-4 sm:p-6 relative overflow-hidden">
       <GlitterOverlay enabled={glitter} />
       <ReactCanvasConfetti onInit={({ confetti }) => (confettiRef.current = confetti)} style={{ position: 'fixed', pointerEvents: 'none', inset: 0 }} />
       <header className="mb-4 flex items-center justify-between">
         <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
-        <span className="text-sm opacity-70">v0.1 prototype</span>
+        <div className="flex items-center gap-2">
+          <button className="chip" onClick={() => navigate('#/')}>← Packs</button>
+          <span className="text-sm opacity-70">v0.2 prototype</span>
+        </div>
       </header>
 
       <main className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_340px]">
