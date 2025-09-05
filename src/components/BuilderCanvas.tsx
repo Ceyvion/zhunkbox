@@ -23,6 +23,8 @@ export function BuilderCanvas({ cols, rows, slots, slotStyles, selectedId, activ
       <div className="mb-3 text-sm opacity-70">Place at least 3 trinkets to unlock checkout.</div>
       <div
         className="grid gap-2 sm:gap-3 justify-center"
+        role="grid"
+        aria-label="Sticker slots"
         style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       >
         {Array.from({ length: rows * cols }).map((_, i) => (
@@ -69,13 +71,24 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
     }
   }
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleClick()
+    }
+  }
+
   return (
     <motion.div
       ref={setNodeRef}
       whileTap={{ scale: 0.98 }}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
       className={`slot ${filled ? 'slot--filled' : 'slot--empty'} ${isOver ? 'slot--over' : ''}`}
       aria-label={`Slot ${index} ${filled ? `with ${label}` : 'empty'}`}
+      role="button"
+      tabIndex={0}
+      aria-pressed={active}
       title={filled ? label : 'Click to place selected'}
     >
       <AnimatePresence mode="popLayout">

@@ -70,6 +70,15 @@ function App() {
   const allTags = useMemo(() => Array.from(new Set(trinkets.flatMap(t => t.tags ?? []))).sort(), [trinkets])
   const [activeTag, setActiveTag] = useState<string>('')
   const [trayOpen, setTrayOpen] = useState(true)
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem('tray_open')
+      if (v === '0') setTrayOpen(false)
+    } catch {}
+  }, [])
+  useEffect(() => {
+    try { localStorage.setItem('tray_open', trayOpen ? '1' : '0') } catch {}
+  }, [trayOpen])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

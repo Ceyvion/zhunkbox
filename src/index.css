@@ -120,6 +120,13 @@ body {
 
 /* Coachmarks overlay */
 .coach-overlay { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
-.coach-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); pointer-events: auto; border: 0; }
-.coach-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 3px #000, 0 0 0 9999px rgba(0,0,0,0.35); background: rgba(255,255,255,0.8); pointer-events: none; }
-.coach-tip { pointer-events: auto; }
+.coach-scrim { position: fixed; inset: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); pointer-events: auto; border: 0; animation: coachFade .18s ease-out; }
+.coach-spot { position: fixed; border-radius: 16px; box-shadow: 0 0 0 3px #000, 0 0 0 9999px rgba(0,0,0,0.35); background: rgba(255,255,255,0.9); pointer-events: none; animation: coachPulse 1.2s ease-in-out infinite; }
+.coach-tip { position: fixed; pointer-events: auto; animation: coachPop .18s ease-out; }
+.coach-arrow { position: absolute; width: 14px; height: 14px; background: #fff; border: 2px solid #000; transform: rotate(45deg); left: var(--coachArrowLeft, 50%); }
+.coach-arrow.top { top: -8px; }
+.coach-arrow.bottom { bottom: -8px; }
+
+@keyframes coachPop { from { opacity: 0; transform: translateY(6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes coachFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes coachPulse { 0% { box-shadow: 0 0 0 3px #000, 0 0 0 9999px rgba(0,0,0,0.35); } 50% { box-shadow: 0 0 0 3px #000, 0 0 0 9999px rgba(0,0,0,0.4); } 100% { box-shadow: 0 0 0 3px #000, 0 0 0 9999px rgba(0,0,0,0.35); } }

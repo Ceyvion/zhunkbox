@@ -78,13 +78,17 @@ export function Coachmarks({ enabled }: { enabled: boolean }) {
 
   // Position tooltip below target (or above if near bottom)
   const viewportH = typeof window !== 'undefined' ? window.innerHeight : 800
+  const tipWidth = 280
   const placeAbove = rect ? rect.bottom + 140 > viewportH : false
+  const tipLeft = rect ? Math.max(12, Math.min(rect.left + rect.width / 2 - tipWidth / 2, window.innerWidth - tipWidth - 12)) : 0
+  const arrowLeft = rect ? Math.max(16, Math.min(rect.left + rect.width / 2 - tipLeft - 7, tipWidth - 16)) : 140
   const tipStyle: React.CSSProperties = rect ? {
     position: 'fixed',
-    left: Math.max(12, Math.min(rect.left + rect.width / 2 - 140, window.innerWidth - 280 - 12)),
-    top: placeAbove ? Math.max(12, rect.top - 96) : Math.min(rect.bottom + 12, viewportH - 132),
-    width: 280,
+    left: tipLeft,
+    top: placeAbove ? Math.max(12, rect.top - 110) : Math.min(rect.bottom + 12, viewportH - 148),
+    width: tipWidth,
     zIndex: 60,
+    ['--coachArrowLeft' as any]: `${arrowLeft}px`,
   } : {}
 
   return (
@@ -98,6 +102,7 @@ export function Coachmarks({ enabled }: { enabled: boolean }) {
         />
       ) : null}
       <div className="paper coach-tip" style={tipStyle}>
+        <div className={`coach-arrow ${placeAbove ? 'bottom' : 'top'}`} aria-hidden />
         <div className="text-xs opacity-70">Step {stepIndex + 1} of {steps.length}</div>
         <div className="font-bold mb-1">{step.title}</div>
         <div className="text-sm mb-2">{step.body}</div>
@@ -109,4 +114,3 @@ export function Coachmarks({ enabled }: { enabled: boolean }) {
     </div>
   )
 }
-
