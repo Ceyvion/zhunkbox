@@ -103,6 +103,38 @@ body {
     3px 3px 0 #000 !important;
 }
 
+.slot--active::after {
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.8), 0 0 0 5px rgba(254, 240, 138, 0.6);
+}
+
+.slot-edit {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 30px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 2px solid #000;
+  background: #fff;
+  box-shadow: 2px 2px 0 #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+.slot-edit:hover,
+.slot-edit:focus-visible {
+  background: #fef08a;
+  box-shadow: 3px 3px 0 #000;
+}
+.slot-edit:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 #000;
+}
+
 /* Packs page polish */
 .pack-card {
   transition: transform 140ms ease, box-shadow 140ms ease;

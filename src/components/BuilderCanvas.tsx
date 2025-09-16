@@ -64,11 +64,15 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
   const { isOver, setNodeRef } = useDroppable({ id: `slot:${index}` })
 
   function handleClick() {
-    if (selectedId) onPlace(index, selectedId)
-    else if (filled) {
-      if (active) onRemove(index)
-      else onSelect(index)
+    if (selectedId) {
+      onPlace(index, selectedId)
+      return
     }
+    if (filled) {
+      onRemove(index)
+      return
+    }
+    onSelect(index)
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -84,16 +88,31 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
       whileTap={{ scale: 0.98 }}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={`slot ${filled ? 'slot--filled' : 'slot--empty'} ${isOver ? 'slot--over' : ''}`}
+      className={`slot ${filled ? 'slot--filled' : 'slot--empty'} ${active ? 'slot--active' : ''} ${isOver ? 'slot--over' : ''}`}
       aria-label={`Slot ${index} ${filled ? `with ${label}` : 'empty'}`}
       role="button"
       tabIndex={0}
       aria-pressed={active}
-      title={filled ? label : 'Click to place selected'}
+      title={filled ? 'Click to remove, or use edit to tweak' : 'Click to place selected'}
     >
       <AnimatePresence mode="popLayout">
         {filled ? (
           <>
+            {!active ? (
+              <button
+                type="button"
+                className="slot-edit"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSelect(index)
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
+                aria-label={`Edit ${label}`}
+                title="Edit sticker"
+              >
+                Edit
+              </button>
+            ) : null}
             <DraggableTrinket key={label} index={index} label={label} trinket={trinket} style={style} />
             {active ? (
               <Controls

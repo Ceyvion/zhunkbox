@@ -54,11 +54,10 @@ function App() {
   const trinketMap = useMemo(() => Object.fromEntries(trinkets.map(t => [t.id, t])), [trinkets])
   const casePrice = catalog.casePrice
   const MAX_BUDGET = 100
-  const maxPrice = useMemo(() => trinkets.reduce((m, t) => Math.max(m, t.price), 0), [trinkets])
-  const allowedSlots = Math.max(12, Math.floor((MAX_BUDGET - casePrice) / maxPrice))
+  const SLOT_COUNT = 20
   const cols = 4
-  const rows = Math.ceil(allowedSlots / cols)
-  const slotCount = cols * rows
+  const rows = Math.ceil(SLOT_COUNT / cols)
+  const slotCount = SLOT_COUNT
 
   const [slots, setSlots] = useState<SlotMap>(() => loadDesign(slotCount))
   const [selectedId, setSelectedId] = useState<string | null>(null)

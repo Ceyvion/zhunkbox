@@ -9,6 +9,14 @@ type Props = {
 }
 
 export function TrinketTray({ trinkets, selectedId, onSelect }: Props) {
+  if (trinkets.length === 0) {
+    return (
+      <div className="py-6 text-center text-sm opacity-70">
+        No stickers found. Clear the search or pick a different tag.
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-2 gap-2">
       {trinkets.map((t) => {
