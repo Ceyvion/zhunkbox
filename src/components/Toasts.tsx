@@ -16,12 +16,11 @@ export function Toasts({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id:
             className={`toast ${t.variant ?? 'info'}`}
             role="status"
           >
-            <span>{t.text}</span>
-            <button className="chip px-2 py-0 h-7" onClick={() => onDismiss(t.id)} aria-label="Dismiss">✕</button>
+            <span className="toast-text">{t.text}</span>
+            <button className="toast-dismiss" onClick={() => onDismiss(t.id)} aria-label="Dismiss">✕</button>
           </motion.div>
         ))}
       </AnimatePresence>
     </div>
   )
 }
-

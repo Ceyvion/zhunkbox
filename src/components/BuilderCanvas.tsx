@@ -113,7 +113,8 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
                 Edit
               </button>
             ) : null}
-            <DraggableTrinket key={label} index={index} label={label} trinket={trinket} style={style} />
+            <DraggableTrinket key={`${value ?? 'empty'}:${index}`} index={index} label={trinket?.name ?? label} trinket={trinket} style={style} />
+            <span className="slot-label" data-visible={active ? 'true' : undefined}>{trinket?.name ?? label}</span>
             {active ? (
               <Controls
                 index={index}
@@ -156,20 +157,20 @@ function DraggableTrinket({ index, label, trinket, style }: { index: number; lab
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      initial={{ scale: 0.2, rotate: -10, opacity: 0 }}
-      animate={{ scale: 1, rotate: 0, opacity: 1 }}
-      exit={{ scale: 0.2, rotate: 10, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
-      className={`flex flex-col items-center ${isDragging ? 'opacity-60' : ''}`}
+      data-dragging={isDragging ? 'true' : undefined}
+      initial={{ scale: 0.2, rotate: -10, opacity: 0, y: 12 }}
+      animate={{ scale: isDragging ? 1.08 : 1, rotate: 0, opacity: 1, y: isDragging ? -6 : 0 }}
+      exit={{ scale: 0.2, rotate: 10, opacity: 0, y: -10 }}
+      transition={{ type: 'spring', stiffness: 420, damping: 24 }}
+      className={`slot-trinket ${isDragging ? 'opacity-90' : ''}`}
     >
-      <div className="sticker mb-1" style={{ transform: `scale(${scale}) rotate(${rotate}deg)`, filter }}>
+      <div className="sticker" style={{ transform: `scale(${scale}) rotate(${rotate}deg)`, filter }}>
         {trinket?.icon ? (
-          <img src={trinket.icon} alt={trinket.name} className="w-12 h-12 sm:w-14 sm:h-14" />
+          <img src={trinket.icon} alt={label} className="w-11 h-11 sm:w-14 sm:h-14" />
         ) : (
-          <span className="w-12 h-12 sm:w-14 sm:h-14 grid place-items-center rounded-full border border-black bg-white text-base font-black">{trinket?.name?.[0] ?? label[0]}</span>
+          <span className="w-11 h-11 sm:w-14 sm:h-14 grid place-items-center rounded-full border border-black bg-white text-sm sm:text-base font-black">{trinket?.name?.[0] ?? label[0]}</span>
         )}
       </div>
-      <span className="text-[10px] sm:text-[11px] font-semibold wonky" style={{ ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}>{trinket?.name ?? label}</span>
     </motion.div>
   )
 }

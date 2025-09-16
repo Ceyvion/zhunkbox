@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SlotMap, SlotStyleMap, StickerStyle, Trinket } from './types'
 import catalog from './data/catalog.json'
 import packs from './data/packs.json'
@@ -229,24 +229,74 @@ function App() {
     setCheckoutOpen(true)
   }
 
+  const fireConfetti = useCallback((mode: 'unlock' | 'glitter') => {
+    const confetti = confettiRef.current
+    if (!confetti) return
+    const palette = ['#fbbf24', '#f472b6', '#38bdf8', '#4ade80', '#e879f9']
+    const base = {
+      disableForReducedMotion: true,
+      colors: palette,
+    }
+    if (mode === 'unlock') {
+      confetti({
+        ...base,
+        particleCount: 140,
+        spread: 70,
+        startVelocity: 34,
+        decay: 0.9,
+        scalar: 0.9,
+        origin: { y: 0.58 },
+        shapes: ['circle', 'square'],
+      })
+      setTimeout(() => {
+        confetti({
+          ...base,
+          particleCount: 70,
+          spread: 110,
+          decay: 0.86,
+          scalar: 1.15,
+          ticks: 200,
+          origin: { y: 0.5 },
+          shapes: ['star'],
+        })
+      }, 90)
+      setTimeout(() => {
+        confetti({
+          ...base,
+          particleCount: 40,
+          spread: 45,
+          scalar: 0.75,
+          startVelocity: 22,
+          origin: { y: 0.62 },
+          gravity: 0.6,
+          drift: 0.6,
+          shapes: ['circle'],
+        })
+      }, 160)
+      return
+    }
+    confetti({
+      ...base,
+      particleCount: 50,
+      spread: 75,
+      startVelocity: 18,
+      decay: 0.92,
+      origin: { y: 0.42 },
+      scalar: 0.7,
+      shapes: ['circle', 'star'],
+    })
+  }, [])
+
   // Gate unlock confetti
   useEffect(() => {
     const unlocked = placedCount >= 3
     if (unlocked && !isUnlocked) {
       setIsUnlocked(true)
-      // Fire confetti burst
-      confettiRef.current && confettiRef.current({
-        particleCount: 140,
-        spread: 70,
-        startVelocity: 35,
-        decay: 0.88,
-        origin: { y: 0.6 },
-        scalar: 0.8,
-      })
+      fireConfetti('unlock')
       console.log('checkout_unlocked')
     }
     if (!unlocked && isUnlocked) setIsUnlocked(false)
-  }, [placedCount, isUnlocked])
+  }, [placedCount, isUnlocked, fireConfetti])
 
   const [draggingFromIndex, setDraggingFromIndex] = useState<number | null>(null)
 
@@ -364,7 +414,7 @@ function App() {
       </header>
 
       <main className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_340px]">
-        <section className="paper p-4 sm:p-6 order-2 md:order-1">
+        <section className="paper builder-mat p-4 sm:p-6 order-2 md:order-1">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Builder</h2>
             <div className="flex items-center gap-2">
@@ -377,9 +427,7 @@ function App() {
                   checked={glitter}
                   onChange={(e) => {
                     setGlitter(e.target.checked)
-                    if (e.target.checked && confettiRef.current) {
-                      confettiRef.current({ particleCount: 60, spread: 60, origin: { y: 0.4 }, scalar: 0.7 })
-                    }
+                    if (e.target.checked) fireConfetti('glitter')
                     console.log('glitter_toggle', { enabled: e.target.checked })
                   }}
                 />
@@ -434,7 +482,7 @@ function App() {
         </section>
 
         <aside className="space-y-4 order-1 md:order-2">
-          <section id="tray" className="paper p-4 sm:p-5 sticky top-2 md:static z-30">
+          <section id="tray" className="paper tray-mat p-4 sm:p-5 sticky top-2 md:static z-30">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h2 className="font-semibold">Sticker Tray</h2>
               <button
@@ -455,7 +503,7 @@ function App() {
                   className="chip w-full bg-white focus:outline-none"
                 />
               </div>
-              <div className="flex flex-wrap gap-2 mb-3">
+              <div className="flex flex-wrap gap-2 mb-3 tag-cloud">
                 <button className={`chip ${activeTag === '' ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag('')}>All</button>
                 {allTags.map(tag => (
                   <button key={tag} className={`chip ${activeTag === tag ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag(tag)}>
