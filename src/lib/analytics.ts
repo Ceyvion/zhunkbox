@@ -62,6 +62,10 @@ type PayloadArgs<E extends AnalyticsEventName> = AnalyticsEventPayloads[E] exten
 
 const sinks = new Set<AnalyticsSink>()
 const history: AnalyticsEvent[] = []
+const nodeProcess: { env?: Record<string, string | undefined> } | undefined =
+  typeof globalThis !== 'undefined' && (globalThis as any).process != null
+    ? (globalThis as any).process
+    : undefined
 
 function defaultSink(event: AnalyticsEvent) {
   history.push(event)
@@ -70,7 +74,7 @@ function defaultSink(event: AnalyticsEvent) {
     if (!w.__zhunkEvents) w.__zhunkEvents = []
     w.__zhunkEvents.push(event)
   }
-  if (typeof process !== 'undefined' && process?.env?.ZHUNK_ANALYTICS_DEBUG === '1') {
+  if (nodeProcess?.env?.ZHUNK_ANALYTICS_DEBUG === '1') {
     if (typeof console !== 'undefined' && typeof console.debug === 'function') {
       console.debug('[analytics]', event.name, event.payload)
     }
