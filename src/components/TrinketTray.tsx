@@ -69,7 +69,7 @@ export function TrinketTray({ trinkets, selectedId, onSelect }: Props) {
 
   return (
     <>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2">
         {trinkets.map((t) => {
           const active = selectedId === t.id
           return (
@@ -140,9 +140,9 @@ function DraggableChip({ id, name, price, icon, active, onClick, onPeekStart, on
       onPointerLeave={onPeekEnd}
       onPointerCancel={onPeekEnd}
       onPointerMove={onPeekMove}
-      className={`chip justify-between wonky py-2 sm:py-1 ${active ? 'bg-yellow-200' : ''} ${isDragging ? 'opacity-60' : ''}`}
+      className={`chip justify-between wonky min-h-[44px] py-2 sm:py-1 ${active ? 'bg-yellow-200' : ''} ${isDragging ? 'opacity-60' : ''}`}
       title={`$${price.toFixed(2)}`}
-      style={{ ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}
+      style={{ touchAction: 'pan-y', ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}
     >
       <span className="inline-flex items-center gap-2">
         <img src={icon ?? `/icons/${id}.svg`} alt="" className="w-5 h-5" />

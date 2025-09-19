@@ -3,6 +3,18 @@ import type { SlotMap, SlotStyleMap, StickerStyle, Trinket } from './types'
 import catalog from './data/catalog.json'
 import packs from './data/packs.json'
 import { loadDesign, saveDesign, resetDesign, loadStyles, saveStyles, resetStyles, defaultStyle, normalizeStyle } from './lib/storage'
+import {
+  recordCheckoutStart,
+  recordCheckoutSubmit,
+  recordCheckoutUnlocked,
+  recordGlitterToggle,
+  recordMove,
+  recordPlacement,
+  recordRandomize,
+  recordRemoval,
+  recordReset,
+  type RemovalMethod,
+} from './lib/builderMetrics'
 import { BuilderCanvas } from './components/BuilderCanvas'
 import { TrinketTray } from './components/TrinketTray'
 import { CheckoutBar } from './components/CheckoutBar'
@@ -74,13 +86,15 @@ function App() {
   const [query, setQuery] = useState('')
   const allTags = useMemo(() => Array.from(new Set(trinkets.flatMap(t => t.tags ?? []))).sort(), [trinkets])
   const [activeTag, setActiveTag] = useState<string>('')
-  const [trayOpen, setTrayOpen] = useState(true)
-  useEffect(() => {
+  const [trayOpen, setTrayOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true
     try {
-      const v = localStorage.getItem('tray_open')
-      if (v === '0') setTrayOpen(false)
+      const stored = window.localStorage.getItem('tray_open')
+      if (stored === '0') return false
+      if (stored === '1') return true
     } catch {}
-  }, [])
+    return window.matchMedia('(min-width: 640px)').matches
+  })
   useEffect(() => {
     try { localStorage.setItem('tray_open', trayOpen ? '1' : '0') } catch {}
   }, [trayOpen])
@@ -159,6 +173,7 @@ function App() {
   }, [items, casePrice, trinkets])
 
   function placeAt(index: number, id: string | null) {
+    const previous = slots[index] ?? null
     setSlots((prev) => ({ ...prev, [index]: id }))
     setActiveSlot(id ? index : null)
     setSlotStyles((prev) => {
@@ -167,10 +182,12 @@ function App() {
       else delete next[index]
       return next
     })
-    console.log(id ? 'trinket_add' : 'trinket_remove', { index, id })
     if (id) {
+      recordPlacement({ index, trinketId: id, replacedId: previous, method: 'tap' })
       const name = trinkets.find(t => t.id === id)?.name ?? id
       pushToast(`Placed ${name}`, 'success')
+    } else if (previous) {
+      recordRemoval({ index, trinketId: previous, method: 'tap' })
     }
   }
 
@@ -182,7 +199,7 @@ function App() {
     setSlotStyles({})
     resetStyles()
     setActiveSlot(null)
-    console.log('reset')
+    recordReset(slotCount)
     pushToast('Cleared design')
   }
 
@@ -221,11 +238,18 @@ function App() {
     setSlots(next)
     setSlotStyles(nextStyle)
     setActiveSlot(null)
-    console.log('randomize', { inPack, count })
+    recordRandomize({ inPack, count })
     pushToast(`Randomized ${count} ${inPack ? 'from pack' : 'stickers'}`, 'success')
   }
 
   function onCheckout() {
+    recordCheckoutStart({
+      total,
+      placedCount,
+      items,
+      packId: activePack?.id ?? null,
+      budget: MAX_BUDGET,
+    })
     setCheckoutOpen(true)
   }
 
@@ -293,7 +317,7 @@ function App() {
     if (unlocked && !isUnlocked) {
       setIsUnlocked(true)
       fireConfetti('unlock')
-      console.log('checkout_unlocked')
+      recordCheckoutUnlocked(placedCount)
     }
     if (!unlocked && isUnlocked) setIsUnlocked(false)
   }, [placedCount, isUnlocked, fireConfetti])
@@ -320,14 +344,17 @@ function App() {
     if (overId && String(overId).startsWith('slot:')) {
       const idxTo = Number(String(overId).split(':')[1])
       if (draggingId != null) {
-        setSlots((prev) => {
-          const next = { ...prev }
-          if (draggingFromIndex != null && draggingFromIndex !== idxTo) {
-            const from = draggingFromIndex
+        const destBefore = slots[idxTo] ?? null
+        const fromIndex = draggingFromIndex
+        if (fromIndex != null && fromIndex === idxTo) {
+          setActiveSlot(idxTo)
+        } else if (fromIndex != null && fromIndex !== idxTo) {
+          setSlots((prev) => {
+            const next = { ...prev }
+            const from = fromIndex
             const destVal = next[idxTo] ?? null
             next[idxTo] = draggingId
             next[from] = destVal
-            // swap styles alongside items
             setSlotStyles((s) => {
               const ns: SlotStyleMap = { ...s }
               const fromStyle = ns[from]
@@ -339,27 +366,23 @@ function App() {
               return ns
             })
             setActiveSlot(idxTo)
-          } else {
+            return next
+          })
+          recordMove({ from: fromIndex, to: idxTo, trinketId: draggingId, replacedId: destBefore })
+        } else if (fromIndex == null) {
+          setSlots((prev) => {
+            const next = { ...prev }
             next[idxTo] = draggingId
-            // move style from origin if applicable else default
             setSlotStyles((s) => {
               const ns: SlotStyleMap = { ...s }
-              if (draggingFromIndex != null) {
-                if (ns[draggingFromIndex]) {
-                  ns[idxTo] = ns[draggingFromIndex]
-                  delete ns[draggingFromIndex]
-                } else {
-                  ns[idxTo] = defaultStyle()
-                }
-              } else {
-                ns[idxTo] = defaultStyle()
-              }
+              ns[idxTo] = defaultStyle()
               return ns
             })
             setActiveSlot(idxTo)
-          }
-          return next
-        })
+            return next
+          })
+          recordPlacement({ index: idxTo, trinketId: draggingId, replacedId: destBefore, method: 'drag' })
+        }
       }
     }
     setDraggingFromIndex(null)
@@ -373,7 +396,7 @@ function App() {
     })
   }
 
-  function removeAt(index: number) {
+  function removeAt(index: number, method: RemovalMethod = 'tap') {
     const removed = slots[index] ?? null
     setSlots((prev) => ({ ...prev, [index]: null }))
     setSlotStyles((prev) => {
@@ -386,6 +409,9 @@ function App() {
       setSelectedId(removed)
       const name = trinkets.find(t => t.id === removed)?.name ?? removed
       pushToast(`Removed ${name}`)
+    }
+    if (removed) {
+      recordRemoval({ index, trinketId: removed, method })
     }
     setActiveSlot(null)
   }
@@ -402,9 +428,9 @@ function App() {
     <div className="min-h-full p-4 sm:p-6 relative overflow-hidden">
       <GlitterOverlay enabled={glitter} />
       <ReactCanvasConfetti onInit={({ confetti }) => (confettiRef.current = confetti)} style={{ position: 'fixed', pointerEvents: 'none', inset: 0 }} />
-      <header className="mb-4 flex items-center justify-between">
+      <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {activePack ? (
             <span className="chip bg-yellow-200">Pack: {activePack.name}</span>
           ) : null}
@@ -414,10 +440,10 @@ function App() {
       </header>
 
       <main className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_340px]">
-        <section className="paper builder-mat p-4 sm:p-6 order-2 md:order-1">
-          <div className="flex items-center justify-between mb-3">
+        <section className="paper builder-mat order-1 md:order-1 p-4 sm:p-6">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold">Builder</h2>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
               <button id="btn-randomize" className="chip" title="Fill a few slots with random stickers (from this pack if selected)" onClick={onRandomize}>Randomize</button>
               <button className="chip" onClick={onReset}>Reset</button>
               <label className="chip cursor-pointer select-none">
@@ -428,7 +454,7 @@ function App() {
                   onChange={(e) => {
                     setGlitter(e.target.checked)
                     if (e.target.checked) fireConfetti('glitter')
-                    console.log('glitter_toggle', { enabled: e.target.checked })
+                    recordGlitterToggle(e.target.checked)
                   }}
                 />
                 Glitter
@@ -481,8 +507,8 @@ function App() {
           </DndContext>
         </section>
 
-        <aside className="space-y-4 order-1 md:order-2">
-          <section id="tray" className="paper tray-mat p-4 sm:p-5 sticky top-2 md:static z-30">
+        <aside className="space-y-4 order-2 md:order-2">
+          <section id="tray" className="paper tray-mat p-3 sm:p-5 sm:sticky sm:top-2 sm:z-30">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h2 className="font-semibold">Sticker Tray</h2>
               <button
@@ -538,7 +564,22 @@ function App() {
         footer={
           <>
             <button className="chip" onClick={() => setCheckoutOpen(false)}>Keep editing</button>
-            <button className="tape-btn" onClick={() => { setCheckoutOpen(false); console.log('checkout_confirm', { items, total }); alert('Pretend checkout… coming soon!') }}>Checkout ${total.toFixed(2)}</button>
+            <button
+              className="tape-btn"
+              onClick={() => {
+                setCheckoutOpen(false)
+                recordCheckoutSubmit({
+                  total,
+                  placedCount,
+                  items,
+                  packId: activePack?.id ?? null,
+                  budget: MAX_BUDGET,
+                })
+                alert('Pretend checkout… coming soon!')
+              }}
+            >
+              Checkout ${total.toFixed(2)}
+            </button>
           </>
         }
       >

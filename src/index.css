@@ -200,6 +200,12 @@ body {
   pointer-events: none;
 }
 
+@media (max-width: 640px) {
+  .builder-mat {
+    overflow: visible;
+  }
+}
+
 .tray-mat {
   position: relative;
   overflow: hidden;
@@ -225,6 +231,16 @@ body {
   color: rgba(56, 189, 248, 0.45);
   transform: rotate(12deg);
   pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  #tray {
+    position: sticky;
+    bottom: 0;
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0));
+  }
 }
 
 .tag-cloud {
