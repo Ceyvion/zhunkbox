@@ -36,7 +36,14 @@ type Route = { page: 'landing' | 'builder'; pack?: string }
 const THEME_KEY = 'zhunk_theme'
 
 function isTheme(value: string | null): value is Theme {
-  return value === 'light' || value === 'dark'
+  return (
+    value === 'light' ||
+    value === 'dark' ||
+    value === 'sakura' ||
+    value === 'matcha' ||
+    value === 'coquette' ||
+    value === 'midnight'
+  )
 }
 
 function getInitialTheme(): Theme {
