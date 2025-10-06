@@ -29,8 +29,24 @@ import { MobileGuide } from './components/MobileGuide'
 import { Coachmarks } from './components/Coachmarks'
 import { Modal } from './components/Modal'
 import { Toasts, type Toast } from './components/Toasts'
+import { ThemeToggle, type Theme } from './components/ThemeToggle'
 
 type Route = { page: 'landing' | 'builder'; pack?: string }
+
+const THEME_KEY = 'zhunk_theme'
+
+function isTheme(value: string | null): value is Theme {
+  return value === 'light' || value === 'dark'
+}
+
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'light'
+  try {
+    const stored = window.localStorage.getItem(THEME_KEY)
+    if (isTheme(stored)) return stored
+  } catch {}
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
 
 function parseHash(): Route {
   const h = window.location.hash || '#/'
@@ -47,12 +63,49 @@ function navigate(to: string) {
 }
 
 function App() {
+  const [theme, setTheme] = useState<Theme>(() => getInitialTheme())
   const [route, setRoute] = useState<Route>(() => parseHash())
   useEffect(() => {
     function onHash() { setRoute(parseHash()) }
     window.addEventListener('hashchange', onHash)
     if (!window.location.hash) navigate('#/')
     return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  useEffect(() => {
+    const root = document.documentElement
+    root.dataset.theme = theme
+    root.style.colorScheme = theme
+  }, [theme])
+
+  useEffect(() => {
+    function onStorage(event: StorageEvent) {
+      if (event.key === THEME_KEY && isTheme(event.newValue)) {
+        setTheme(event.newValue)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  useEffect(() => {
+    if (!window.matchMedia) return
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    function onChange(e: MediaQueryListEvent) {
+      try {
+        const stored = localStorage.getItem(THEME_KEY)
+        if (!isTheme(stored)) {
+          setTheme(e.matches ? 'dark' : 'light')
+        }
+      } catch {}
+    }
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [])
+
+  const handleThemeToggle = useCallback((next: Theme) => {
+    setTheme(next)
+    try { localStorage.setItem(THEME_KEY, next) } catch {}
   }, [])
 
   const allTrinkets = catalog.trinkets as Trinket[]
@@ -419,7 +472,11 @@ function App() {
   if (route.page === 'landing') {
     return (
       <div className="min-h-full p-4 sm:p-6">
-        <LandingPage onChoose={(id) => navigate(`#/builder?pack=${id}`)} />
+        <LandingPage
+          theme={theme}
+          onToggleTheme={handleThemeToggle}
+          onChoose={(id) => navigate(`#/builder?pack=${id}`)}
+        />
       </div>
     )
   }
@@ -431,8 +488,9 @@ function App() {
       <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
           {activePack ? (
-            <span className="chip bg-yellow-200">Pack: {activePack.name}</span>
+            <span className="chip chip--active">Pack: {activePack.name}</span>
           ) : null}
           <button className="chip" onClick={() => navigate('#/')}>← Packs</button>
           <span className="text-sm opacity-70">v0.2 prototype</span>
@@ -494,7 +552,7 @@ function App() {
             </PhoneCase>
             <DragOverlay dropAnimation={{ duration: 150 }}>
               {draggingId ? (
-                <div className={clsx('chip wonky', 'bg-yellow-200 scale-110')} style={{ ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}>
+                <div className={clsx('chip wonky', 'chip--active scale-110')} style={{ ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}>
                   <span className="inline-flex items-center gap-2">
                     {trinketMap[draggingId]?.icon ? (
                       <img src={trinketMap[draggingId].icon!} alt="" className="w-5 h-5" />
@@ -526,13 +584,13 @@ function App() {
                   placeholder="Search"
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  className="chip w-full bg-white focus:outline-none"
+                  className="chip w-full focus:outline-none"
                 />
               </div>
               <div className="flex flex-wrap gap-2 mb-3 tag-cloud">
-                <button className={`chip ${activeTag === '' ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag('')}>All</button>
+                <button className={clsx('chip', activeTag === '' && 'chip--active')} onClick={() => setActiveTag('')}>All</button>
                 {allTags.map(tag => (
-                  <button key={tag} className={`chip ${activeTag === tag ? 'bg-yellow-200' : ''}`} onClick={() => setActiveTag(tag)}>
+                  <button key={tag} className={clsx('chip', activeTag === tag && 'chip--active')} onClick={() => setActiveTag(tag)}>
                     {tag}
                   </button>
                 ))}

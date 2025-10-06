@@ -95,7 +95,7 @@ export function TrinketTray({ trinkets, selectedId, onSelect }: Props) {
               <img src={peek.trinket.icon} alt="" aria-hidden />
             ) : (
               <div className="sticker mb-2" aria-hidden>
-                <span className="w-12 h-12 grid place-items-center rounded-full border border-black bg-white text-base font-black">
+                <span className="sticker-inner w-12 h-12 text-base font-black">
                   {peek.trinket.name[0]}
                 </span>
               </div>
@@ -140,7 +140,7 @@ function DraggableChip({ id, name, price, icon, active, onClick, onPeekStart, on
       onPointerLeave={onPeekEnd}
       onPointerCancel={onPeekEnd}
       onPointerMove={onPeekMove}
-      className={`chip justify-between wonky min-h-[44px] py-2 sm:py-1 ${active ? 'bg-yellow-200' : ''} ${isDragging ? 'opacity-60' : ''}`}
+      className={`chip justify-between wonky min-h-[44px] py-2 sm:py-1 ${active ? 'chip--active' : ''} ${isDragging ? 'opacity-60' : ''}`}
       title={`$${price.toFixed(2)}`}
       style={{ touchAction: 'pan-y', ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}
     >

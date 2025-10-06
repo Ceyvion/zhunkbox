@@ -31,25 +31,25 @@ export function PhoneCase({ children }: { children: ReactNode }) {
         <motion.div
           initial={{ rotateZ: -8 }}
           animate={{ rotateZ: -8 }}
-          className="absolute inset-0 rounded-[44px] border-[3px] border-black bg-gradient-to-br from-[#fff7fb] via-[#fffafc] to-[#ffeef7] shadow-[16px_16px_0_#000]"
+          className="case-shell"
         >
           {/* Camera notch */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-4 rounded-full bg-black/10"/>
+          <div className="case-notch" />
 
           {/* Inner lip with soft inner shadow */}
-          <div className="absolute inset-[18px] rounded-[38px] border-2 border-black/20 shadow-[inset_4px_4px_0_#00000010,inset_-4px_-6px_0_#ffffff]" />
+          <div className="case-lip" />
 
           {/* Inner work area with dotted guide and subtle fabric texture */}
-          <div className="absolute inset-[24px] rounded-[36px] border-2 border-dashed border-black/40 p-3 overflow-hidden bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.7),rgba(255,255,255,0)_55%)]">
+          <div className="case-deck">
             {/* dotted grid background */}
-            <div className="absolute inset-0 opacity-40" style={{ backgroundImage: 'radial-gradient(#000 0.8px, transparent 0.8px)', backgroundSize: '18px 18px', backgroundPosition: '9px 9px' }} />
-            <div className="relative">
+            <div className="case-grid" />
+            <div className="case-workspace">
               {children}
             </div>
           </div>
 
           {/* light glare */}
-          <div className="pointer-events-none absolute inset-0 rounded-[44px]" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.0) 40%)', mixBlendMode: 'screen' }} />
+          <div className="case-glare" />
         </motion.div>
       </div>
     </motion.div>

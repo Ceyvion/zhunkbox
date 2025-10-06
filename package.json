@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:build": "tsc -p tsconfig.test.json",
+    "test": "npm run test:build && node -e \"require('fs').writeFileSync('dist-tests/package.json','{\\\"type\\\":\\\"commonjs\\\"}')\" && node --test dist-tests/tests/*.js",
     "preview": "vite preview"
   },
   "dependencies": {
