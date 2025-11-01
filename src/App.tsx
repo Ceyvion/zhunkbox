@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SlotMap, SlotStyleMap, StickerStyle, Trinket } from './types'
-import catalog from './data/catalog.json'
 import packs from './data/packs.json'
+import { AdminPage } from './components/AdminPage'
 import { loadDesign, saveDesign, resetDesign, loadStyles, saveStyles, resetStyles, defaultStyle, normalizeStyle } from './lib/storage'
+import { useHistory } from './hooks/useHistory'
 import {
   recordCheckoutStart,
   recordCheckoutSubmit,
@@ -18,6 +19,7 @@ import {
 import { BuilderCanvas } from './components/BuilderCanvas'
 import { TrinketTray } from './components/TrinketTray'
 import { CheckoutBar } from './components/CheckoutBar'
+import { FloatingToolbar } from './components/FloatingToolbar'
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { clsx } from 'clsx'
 import ReactCanvasConfetti from 'react-canvas-confetti'
@@ -28,10 +30,13 @@ import { LandingPage } from './components/LandingPage'
 import { MobileGuide } from './components/MobileGuide'
 import { Coachmarks } from './components/Coachmarks'
 import { Modal } from './components/Modal'
+import { HelpModal } from './components/HelpModal'
 import { Toasts, type Toast } from './components/Toasts'
 import { ThemeToggle, type Theme } from './components/ThemeToggle'
+import { bundledCatalog, normalizeCatalogResponse, type CatalogData } from './lib/catalog'
+import html2canvas from 'html2canvas'
 
-type Route = { page: 'landing' | 'builder'; pack?: string }
+type Route = { page: 'landing' | 'builder' | 'admin'; pack?: string }
 
 const THEME_KEY = 'zhunk_theme'
 
@@ -62,6 +67,9 @@ function parseHash(): Route {
   if (path === '/builder') {
     return { page: 'builder', pack: params.get('pack') || undefined }
   }
+  if (path === '/admin') {
+    return { page: 'admin' }
+  }
   return { page: 'landing' }
 }
 
@@ -72,6 +80,29 @@ function navigate(to: string) {
 function App() {
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme())
   const [route, setRoute] = useState<Route>(() => parseHash())
+  const [catalogData, setCatalogData] = useState<CatalogData>(() => bundledCatalog)
+  const [catalogStatus, setCatalogStatus] = useState<'idle' | 'loading' | 'error'>('idle')
+
+  const loadCatalog = useCallback(async () => {
+    try {
+      setCatalogStatus('loading')
+      const res = await fetch('/api/catalog', { credentials: 'include' })
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`)
+      const payload = await res.json()
+      const normalized = normalizeCatalogResponse(payload)
+      setCatalogData(normalized)
+      setCatalogStatus('idle')
+      return normalized
+    } catch (error) {
+      console.warn('Failed to fetch catalog from API, continuing with bundled data.', error)
+      setCatalogStatus('error')
+      return null
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCatalog()
+  }, [loadCatalog])
   useEffect(() => {
     function onHash() { setRoute(parseHash()) }
     window.addEventListener('hashchange', onHash)
@@ -115,7 +146,7 @@ function App() {
     try { localStorage.setItem(THEME_KEY, next) } catch {}
   }, [])
 
-  const allTrinkets = catalog.trinkets as Trinket[]
+  const allTrinkets = catalogData.trinkets as Trinket[]
   const activePack = (packs as any[]).find((p) => p.id === route.pack)
   const trinkets = useMemo(() => {
     if (route.page !== 'builder') return allTrinkets
@@ -124,22 +155,28 @@ function App() {
     return allTrinkets.filter(t => set.has(t.id))
   }, [route, activePack, allTrinkets])
   const trinketMap = useMemo(() => Object.fromEntries(trinkets.map(t => [t.id, t])), [trinkets])
-  const casePrice = catalog.casePrice
+  const casePrice = catalogData.casePrice
   const MAX_BUDGET = 100
   const SLOT_COUNT = 20
   const cols = 4
   const rows = Math.ceil(SLOT_COUNT / cols)
   const slotCount = SLOT_COUNT
 
-  const [slots, setSlots] = useState<SlotMap>(() => loadDesign(slotCount))
+  const slotsHistory = useHistory<SlotMap>(loadDesign(slotCount), 50)
+  const stylesHistory = useHistory<SlotStyleMap>(loadStyles(), 50)
+  const slots = slotsHistory.state
+  const slotStyles = stylesHistory.state
+  const setSlots = slotsHistory.set
+  const setSlotStyles = stylesHistory.set
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [slotStyles, setSlotStyles] = useState<SlotStyleMap>(() => loadStyles())
   const [activeSlot, setActiveSlot] = useState<number | null>(null)
   const [glitter, setGlitter] = useState(false)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [isUnlocked, setIsUnlocked] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [coachOpen, setCoachOpen] = useState(false)
+  const [previewMode, setPreviewMode] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [toasts, setToasts] = useState<Toast[]>([])
   const toastSeq = useRef(1)
   const confettiRef = useRef<import('canvas-confetti').CreateTypes | null>(null)
@@ -158,6 +195,40 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('tray_open', trayOpen ? '1' : '0') } catch {}
   }, [trayOpen])
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    if (route.page !== 'builder') return
+
+    function handleKeyDown(e: KeyboardEvent) {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+      const mod = isMac ? e.metaKey : e.ctrlKey
+
+      if (mod && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        slotsHistory.undo()
+        stylesHistory.undo()
+        pushToast('Undo', 'info')
+      } else if (mod && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        slotsHistory.redo()
+        stylesHistory.redo()
+        pushToast('Redo', 'info')
+      } else if (e.key === 'p' && mod) {
+        e.preventDefault()
+        setPreviewMode(v => !v)
+      } else if (e.key === 'Escape' && previewMode) {
+        e.preventDefault()
+        setPreviewMode(false)
+      } else if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+        e.preventDefault()
+        setHelpOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [route.page, slotsHistory, stylesHistory])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -259,6 +330,8 @@ function App() {
     setSlotStyles({})
     resetStyles()
     setActiveSlot(null)
+    slotsHistory.reset(cleared)
+    stylesHistory.reset({})
     recordReset(slotCount)
     pushToast('Cleared design')
   }
@@ -476,6 +549,88 @@ function App() {
     setActiveSlot(null)
   }
 
+  function bringToFront(index: number) {
+    const maxZ = Math.max(...Object.values(slotStyles).map(s => s.zIndex ?? 0))
+    updateStyle(index, { zIndex: maxZ + 1 })
+    pushToast('Brought to front', 'info')
+  }
+
+  function sendToBack(index: number) {
+    const minZ = Math.min(...Object.values(slotStyles).map(s => s.zIndex ?? 0))
+    updateStyle(index, { zIndex: minZ - 1 })
+    pushToast('Sent to back', 'info')
+  }
+
+  function duplicateSticker(index: number) {
+    const id = slots[index]
+    const style = slotStyles[index]
+    if (!id) return
+
+    // Find first empty slot
+    const emptySlot = Object.keys(slots).find(k => !slots[Number(k)])
+    if (!emptySlot) {
+      pushToast('No empty slots available', 'error')
+      return
+    }
+
+    const emptyIndex = Number(emptySlot)
+    setSlots((prev) => ({ ...prev, [emptyIndex]: id }))
+    setSlotStyles((prev) => ({
+      ...prev,
+      [emptyIndex]: { ...style, zIndex: (style.zIndex ?? 0) + 1 },
+    }))
+    pushToast('Sticker duplicated', 'success')
+  }
+
+  async function exportAsImage() {
+    const caseElement = document.getElementById('case-area')
+    if (!caseElement) {
+      pushToast('Could not find case to export', 'error')
+      return
+    }
+
+    try {
+      pushToast('Generating image...', 'info')
+      const canvas = await html2canvas(caseElement, {
+        backgroundColor: null,
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      })
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          pushToast('Export failed', 'error')
+          return
+        }
+
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `zhunk-case-${Date.now()}.png`
+        link.click()
+        URL.revokeObjectURL(url)
+        pushToast('Image downloaded!', 'success')
+      }, 'image/png')
+    } catch (error) {
+      console.error('Export failed:', error)
+      pushToast('Export failed', 'error')
+    }
+  }
+
+  if (route.page === 'admin') {
+    return (
+      <div className="min-h-full p-4 sm:p-6">
+        <AdminPage
+          catalog={catalogData}
+          catalogStatus={catalogStatus}
+          onReloadCatalog={loadCatalog}
+          onNavigateHome={() => navigate('#/')}
+        />
+      </div>
+    )
+  }
+
   if (route.page === 'landing') {
     return (
       <div className="min-h-full p-4 sm:p-6">
@@ -483,6 +638,8 @@ function App() {
           theme={theme}
           onToggleTheme={handleThemeToggle}
           onChoose={(id) => navigate(`#/builder?pack=${id}`)}
+          trinkets={catalogData.trinkets}
+          onOpenAdmin={() => navigate('#/admin')}
         />
       </div>
     )
@@ -492,25 +649,84 @@ function App() {
     <div className="min-h-full p-4 sm:p-6 relative overflow-hidden">
       <GlitterOverlay enabled={glitter} />
       <ReactCanvasConfetti onInit={({ confetti }) => (confettiRef.current = confetti)} style={{ position: 'fixed', pointerEvents: 'none', inset: 0 }} />
-      <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
-          {activePack ? (
-            <span className="chip chip--active">Pack: {activePack.name}</span>
-          ) : null}
-          <button className="chip" onClick={() => navigate('#/')}>← Packs</button>
-          <span className="text-sm opacity-70">v0.2 prototype</span>
+
+      {previewMode ? (
+        <div className="preview-mode">
+          <button
+            className="preview-exit"
+            onClick={() => setPreviewMode(false)}
+            title="Exit Preview (ESC or Ctrl+P)"
+          >
+            ✕ Exit Preview
+          </button>
+          <div className="preview-case-container">
+            <PhoneCase>
+              <div>
+                <BuilderCanvas
+                  cols={cols}
+                  rows={rows}
+                  slots={slots}
+                  slotStyles={slotStyles}
+                  selectedId={null}
+                  activeSlot={null}
+                  onSelectSlot={() => {}}
+                  onPlace={() => {}}
+                  onRemove={() => {}}
+                  onStyleChange={() => {}}
+                  trinketMap={trinketMap}
+                />
+              </div>
+            </PhoneCase>
+          </div>
         </div>
-      </header>
+      ) : (
+        <>
+          <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CutoutTitle text="The Zhunk Box — DIY Case Lab" />
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
+              {activePack ? (
+                <span className="chip chip--active">Pack: {activePack.name}</span>
+              ) : null}
+              <button className="chip" onClick={() => navigate('#/')}>← Packs</button>
+              <span className="text-xs opacity-50 font-mono">v1.0.0</span>
+            </div>
+          </header>
 
       <main className="grid gap-4 sm:gap-6 md:grid-cols-[1fr_340px]">
         <section className="paper builder-mat order-1 md:order-1 p-4 sm:p-6">
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="font-semibold">Builder</h2>
             <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <button
+                className="chip"
+                onClick={() => {
+                  slotsHistory.undo()
+                  stylesHistory.undo()
+                  pushToast('Undo', 'info')
+                }}
+                disabled={!slotsHistory.canUndo}
+                title="Undo (Ctrl+Z)"
+              >
+                ↶ Undo
+              </button>
+              <button
+                className="chip"
+                onClick={() => {
+                  slotsHistory.redo()
+                  stylesHistory.redo()
+                  pushToast('Redo', 'info')
+                }}
+                disabled={!slotsHistory.canRedo}
+                title="Redo (Ctrl+Y)"
+              >
+                ↷ Redo
+              </button>
               <button id="btn-randomize" className="chip" title="Fill a few slots with random stickers (from this pack if selected)" onClick={onRandomize}>Randomize</button>
               <button className="chip" onClick={onReset}>Reset</button>
+              <button className="chip" onClick={() => setPreviewMode(true)} title="Preview (Ctrl+P)">👁 Preview</button>
+              <button className="chip" onClick={exportAsImage} title="Export as Image">⤓ Export</button>
+              <button className="chip" onClick={() => setHelpOpen(true)} title="Help & Shortcuts (?)">? Help</button>
               <label className="chip cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -624,11 +840,11 @@ function App() {
 
       <Modal
         open={checkoutOpen}
-        title="Your case"
+        title="Review Your Design"
         onClose={() => setCheckoutOpen(false)}
         footer={
-          <>
-            <button className="chip" onClick={() => setCheckoutOpen(false)}>Keep editing</button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button className="chip" onClick={() => setCheckoutOpen(false)}>← Keep editing</button>
             <button
               className="tape-btn"
               onClick={() => {
@@ -640,29 +856,109 @@ function App() {
                   packId: activePack?.id ?? null,
                   budget: MAX_BUDGET,
                 })
-                alert('Pretend checkout… coming soon!')
+                pushToast('Checkout complete! 🎉', 'success')
               }}
             >
-              Checkout ${total.toFixed(2)}
+              Proceed to Checkout · ${total.toFixed(2)}
             </button>
-          </>
+          </div>
         }
       >
-        <div className="text-sm">
-          <div className="mb-2">Total: <strong>${total.toFixed(2)}</strong></div>
-          <ul className="list-disc list-inside space-y-1">
-            {items.length === 0 ? (
-              <li>No stickers yet — add some!</li>
-            ) : (
-              items.map(({ id, qty }) => (
-                <li key={id}>{trinketMap[id]?.name ?? id} × {qty}</li>
-              ))
+        <div className="space-y-4">
+          {/* Design preview thumbnail */}
+          <div className="checkout-preview">
+            <div className="checkout-preview-case">
+              <PhoneCase>
+                <div>
+                  <BuilderCanvas
+                    cols={cols}
+                    rows={rows}
+                    slots={slots}
+                    slotStyles={slotStyles}
+                    selectedId={null}
+                    activeSlot={null}
+                    onSelectSlot={() => {}}
+                    onPlace={() => {}}
+                    onRemove={() => {}}
+                    onStyleChange={() => {}}
+                    trinketMap={trinketMap}
+                  />
+                </div>
+              </PhoneCase>
+            </div>
+          </div>
+
+          {/* Order summary */}
+          <div className="checkout-summary">
+            <h3 className="font-semibold mb-2">Order Summary</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Phone Case</span>
+                <span>${casePrice.toFixed(2)}</span>
+              </div>
+              {items.length > 0 && (
+                <div className="space-y-1">
+                  {items.map(({ id, qty }) => {
+                    const trinket = trinketMap[id]
+                    const itemTotal = (trinket?.price ?? 0) * qty
+                    return (
+                      <div key={id} className="flex justify-between text-sm opacity-90">
+                        <span className="flex items-center gap-2">
+                          {trinket?.icon && (
+                            <img src={trinket.icon} alt="" className="w-4 h-4" />
+                          )}
+                          {trinket?.name ?? id} × {qty}
+                        </span>
+                        <span>${itemTotal.toFixed(2)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="border-t pt-2 flex justify-between font-bold">
+                <span>Total</span>
+                <span>${total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="checkout-stats">
+            <div className="checkout-stat">
+              <div className="text-2xl font-bold">{placedCount}</div>
+              <div className="text-xs opacity-70">Stickers</div>
+            </div>
+            <div className="checkout-stat">
+              <div className="text-2xl font-bold">${(MAX_BUDGET - total).toFixed(0)}</div>
+              <div className="text-xs opacity-70">Budget Left</div>
+            </div>
+            {activePack && (
+              <div className="checkout-stat">
+                <div className="text-sm font-bold">{activePack.name}</div>
+                <div className="text-xs opacity-70">Pack Used</div>
+              </div>
             )}
-          </ul>
+          </div>
         </div>
       </Modal>
 
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+
       <Toasts toasts={toasts} onDismiss={(id) => setToasts((prev) => prev.filter(t => t.id !== id))} />
+
+      {activeSlot !== null && slots[activeSlot] && slotStyles[activeSlot] && (
+        <FloatingToolbar
+          slotIndex={activeSlot}
+          style={slotStyles[activeSlot]}
+          onStyleChange={updateStyle}
+          onDuplicate={() => duplicateSticker(activeSlot)}
+          onDelete={() => removeAt(activeSlot, 'toolbar')}
+          onBringToFront={() => bringToFront(activeSlot)}
+          onSendToBack={() => sendToBack(activeSlot)}
+        />
+      )}
+        </>
+      )}
     </div>
   )
 }

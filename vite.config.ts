@@ -26,4 +26,22 @@ function fixFramerMotionFinalKeyframe(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), fixFramerMotionFinalKeyframe()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 })

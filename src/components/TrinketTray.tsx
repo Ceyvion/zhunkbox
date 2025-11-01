@@ -69,7 +69,7 @@ export function TrinketTray({ trinkets, selectedId, onSelect }: Props) {
 
   return (
     <>
-      <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
         {trinkets.map((t) => {
           const active = selectedId === t.id
           return (
@@ -140,15 +140,17 @@ function DraggableChip({ id, name, price, icon, active, onClick, onPeekStart, on
       onPointerLeave={onPeekEnd}
       onPointerCancel={onPeekEnd}
       onPointerMove={onPeekMove}
-      className={`chip justify-between wonky min-h-[44px] py-2 sm:py-1 ${active ? 'chip--active' : ''} ${isDragging ? 'opacity-60' : ''}`}
+      className={`trinket-card ${active ? 'trinket-card--active' : ''} ${isDragging ? 'opacity-60' : ''}`}
       title={`$${price.toFixed(2)}`}
-      style={{ touchAction: 'pan-y', ['--r' as any]: `${(Math.random() * 4 - 2).toFixed(2)}deg` }}
+      style={{ touchAction: 'pan-y' }}
     >
-      <span className="inline-flex items-center gap-2">
-        <img src={icon ?? `/icons/${id}.svg`} alt="" className="w-5 h-5" />
-        <span className="font-semibold">{name}</span>
-      </span>
-      <span className="text-xs opacity-70">${price.toFixed(2)}</span>
+      <div className="trinket-card-icon">
+        <img src={icon ?? `/icons/${id}.svg`} alt="" className="w-full h-full object-contain" />
+      </div>
+      <div className="trinket-card-info">
+        <span className="trinket-card-name">{name}</span>
+        <span className="trinket-card-price">${price.toFixed(2)}</span>
+      </div>
     </motion.button>
   )
 }

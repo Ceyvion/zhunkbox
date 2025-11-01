@@ -1,5 +1,4 @@
 import packs from '../data/packs.json'
-import catalog from '../data/catalog.json'
 import type { Trinket } from '../types'
 import { clsx } from 'clsx'
 import { motion } from 'framer-motion'
@@ -12,8 +11,7 @@ type Pack = {
   trinkets: string[]
 }
 
-export function LandingPage({ onChoose, theme, onToggleTheme }: { onChoose: (packId: string) => void; theme: Theme; onToggleTheme: (next: Theme) => void }) {
-  const trinkets = catalog.trinkets as Trinket[]
+export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAdmin }: { onChoose: (packId: string) => void; theme: Theme; onToggleTheme: (next: Theme) => void; trinkets: Trinket[]; onOpenAdmin?: () => void }) {
   const tMap = Object.fromEntries(trinkets.map(t => [t.id, t])) as Record<string, Trinket>
 
   return (
@@ -25,10 +23,21 @@ export function LandingPage({ onChoose, theme, onToggleTheme }: { onChoose: (pac
             <p className="text-sm opacity-70">Pick a trinket pack to start designing your case.</p>
           </div>
           <div className="flex items-center gap-2">
+            {onOpenAdmin ? (
+              <button type="button" className="chip hidden sm:inline-flex" onClick={onOpenAdmin}>
+                Inventory
+              </button>
+            ) : null}
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-            <span className="chip chip--active hidden sm:inline-flex">New: cute tactile builder ✦</span>
           </div>
         </div>
+        {onOpenAdmin ? (
+          <div className="mt-3 sm:hidden">
+            <button type="button" className="chip" onClick={onOpenAdmin}>
+              Admin inventory console
+            </button>
+          </div>
+        ) : null}
         {/* playful hero with floating stickers */}
         <div className="mt-4 grid grid-cols-3 sm:grid-cols-6 gap-2">
           {['kawaii-boba','star','heart','kawaii-panda','rainbow','sparkle'].map((id, i) => (
