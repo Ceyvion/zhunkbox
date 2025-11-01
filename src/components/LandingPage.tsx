@@ -1,3 +1,4 @@
+import { useMemo, useRef } from 'react'
 import packs from '../data/packs.json'
 import type { Trinket } from '../types'
 import { clsx } from 'clsx'
@@ -12,43 +13,101 @@ type Pack = {
 }
 
 export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAdmin }: { onChoose: (packId: string) => void; theme: Theme; onToggleTheme: (next: Theme) => void; trinkets: Trinket[]; onOpenAdmin?: () => void }) {
-  const tMap = Object.fromEntries(trinkets.map(t => [t.id, t])) as Record<string, Trinket>
+  const tMap = useMemo(
+    () => Object.fromEntries(trinkets.map(t => [t.id, t])) as Record<string, Trinket>,
+    [trinkets],
+  )
+  const packListRef = useRef<HTMLDivElement>(null)
+  const heroStickerIds = ['kawaii-boba', 'star', 'heart', 'kawaii-panda', 'rainbow', 'sparkle', 'ice-cream', 'planet']
+  const heroStickers = heroStickerIds.map((id) => tMap[id]?.icon).filter(Boolean) as string[]
+  const packCount = (packs as Pack[]).length
+  const totalTrinkets = trinkets.length
+  const tagCount = useMemo(() => {
+    const tags = new Set<string>()
+    trinkets.forEach((t) => (t.tags ?? []).forEach((tag) => tags.add(tag)))
+    return tags.size
+  }, [trinkets])
+  const featuredPack = (packs as Pack[])[0]
+
+  function handleStartDesign() {
+    if (packListRef.current) {
+      packListRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (featuredPack) onChoose(featuredPack.id)
+  }
 
   return (
     <div className="space-y-6">
-      <header className="paper p-5 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold wonky" style={{ ['--r' as any]: '-1.2deg' }}>The Zhunk Box — DIY Case Lab</h1>
-            <p className="text-sm opacity-70">Pick a trinket pack to start designing your case.</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <section className="landing-hero paper p-5 sm:p-8 lg:p-10">
+        <div className="landing-hero__top">
+          <div className="landing-hero__controls">
             {onOpenAdmin ? (
-              <button type="button" className="chip hidden sm:inline-flex" onClick={onOpenAdmin}>
+              <button type="button" className="chip" onClick={onOpenAdmin}>
                 Inventory
               </button>
             ) : null}
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           </div>
         </div>
-        {onOpenAdmin ? (
-          <div className="mt-3 sm:hidden">
-            <button type="button" className="chip" onClick={onOpenAdmin}>
-              Admin inventory console
-            </button>
+        <div className="landing-hero__grid">
+          <div className="landing-hero__copy">
+            <span className="hero-pill">Welcome to the DIY Case Lab</span>
+            <h1 className="landing-hero__title">Design your dream phone case in minutes</h1>
+            <p className="landing-hero__subtitle">
+              Mix playful trinket packs, layer stickers like a pro, and preview your build before you ever hit checkout.
+            </p>
+            <div className="landing-hero__actions">
+              <button className="tape-btn tape-btn--lg" onClick={handleStartDesign}>
+                Start designing
+              </button>
+              <button
+                className="chip"
+                type="button"
+                onClick={() => packListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                Browse packs
+              </button>
+            </div>
+            <div className="landing-hero__metrics">
+              <Metric label="Curated packs" value={packCount.toString()} />
+              <Metric label="Hand-drawn trinkets" value={totalTrinkets.toString()} />
+              <Metric label="Aesthetic styles" value={`${tagCount}+`} />
+            </div>
+            <div className="landing-hero__steps">
+              {[
+                { title: 'Pick a pack', detail: 'Choose the vibe that fits your mood.' },
+                { title: 'Drag & style', detail: 'Drop stickers onto the case, rotate, resize, and layer.' },
+                { title: 'Share or shop', detail: 'Export a mockup or head to checkout once it’s perfect.' },
+              ].map((item, i) => (
+                <StepCard key={item.title} index={i + 1} title={item.title} detail={item.detail} />
+              ))}
+            </div>
           </div>
-        ) : null}
-        {/* playful hero with floating stickers */}
-        <div className="mt-4 grid grid-cols-3 sm:grid-cols-6 gap-2">
-          {['kawaii-boba','star','heart','kawaii-panda','rainbow','sparkle'].map((id, i) => (
-            <motion.div key={id} className="sticker flex items-center justify-center h-12" initial={{ y: 0 }} animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 3 + i * 0.2, ease: 'easeInOut' }}>
-              <img src={tMap[id]?.icon} alt="" className="w-8 h-8" loading="lazy" />
-            </motion.div>
-          ))}
+          <div className="landing-hero__preview">
+            <div className="landing-hero__preview-frame">
+              <div className="landing-hero__preview-case">
+                {heroStickers.map((src, i) => (
+                  <motion.div
+                    key={`${src}-${i}`}
+                    className={clsx('landing-hero__sticker', `landing-hero__sticker--${i}`)}
+                    initial={{ y: 0 }}
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ repeat: Infinity, duration: 3.5 + i * 0.25, ease: 'easeInOut', delay: i * 0.1 }}
+                  >
+                    <img src={src} alt="" loading="lazy" />
+                  </motion.div>
+                ))}
+              </div>
+              <div className="landing-hero__preview-caption">
+                Layer stickers, try glitter, and see your case in real time.
+              </div>
+            </div>
+          </div>
         </div>
-      </header>
+      </section>
 
-      <section className="paper p-5 sm:p-6">
+      <section className="paper p-5 sm:p-6" ref={packListRef}>
         <h2 className="font-semibold mb-4">Trinket packs</h2>
         <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(packs as Pack[]).map((p) => (
@@ -60,13 +119,34 @@ export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAd
       </section>
 
       <section className="paper p-5 sm:p-6">
-        <h3 className="font-semibold mb-2">How it works</h3>
-        <ol className="list-decimal list-inside text-sm space-y-1">
-          <li>Choose a pack that matches your vibe.</li>
-          <li>Drag trinkets onto the case; rotate and resize for flair.</li>
-          <li>Place at least 3 to unlock checkout; stay under budget.</li>
-        </ol>
+        <h3 className="font-semibold mb-2">Lab perks</h3>
+        <ul className="space-y-2 text-sm">
+          <li>✨ Export polished mockups to share with friends or your shop.</li>
+          <li>🧪 Track which trinkets are trending with the built-in analytics.</li>
+          <li>🎨 Swap themes, toggle glitter, and remix packs without losing progress.</li>
+        </ul>
       </section>
+    </div>
+  )
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="landing-hero__metric">
+      <span className="landing-hero__metric-value">{value}</span>
+      <span className="landing-hero__metric-label">{label}</span>
+    </div>
+  )
+}
+
+function StepCard({ index, title, detail }: { index: number; title: string; detail: string }) {
+  return (
+    <div className="landing-step">
+      <span className="landing-step__number">{index}</span>
+      <div>
+        <p className="landing-step__title">{title}</p>
+        <p className="landing-step__detail">{detail}</p>
+      </div>
     </div>
   )
 }
