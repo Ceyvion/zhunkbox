@@ -550,21 +550,32 @@ function App() {
   }
 
   function bringToFront(index: number) {
-    const maxZ = Math.max(...Object.values(slotStyles).map(s => s.zIndex ?? 0))
-    updateStyle(index, { zIndex: maxZ + 1 })
+    const styleValues = Object.values(slotStyles).filter(
+      (s): s is StickerStyle => Boolean(s),
+    )
+    const currentMax = styleValues.length
+      ? Math.max(...styleValues.map((s) => s.zIndex))
+      : 0
+    updateStyle(index, { zIndex: currentMax + 1 })
     pushToast('Brought to front', 'info')
   }
 
   function sendToBack(index: number) {
-    const minZ = Math.min(...Object.values(slotStyles).map(s => s.zIndex ?? 0))
-    updateStyle(index, { zIndex: minZ - 1 })
+    const styleValues = Object.values(slotStyles).filter(
+      (s): s is StickerStyle => Boolean(s),
+    )
+    const currentMin = styleValues.length
+      ? Math.min(...styleValues.map((s) => s.zIndex))
+      : 0
+    updateStyle(index, { zIndex: currentMin - 1 })
     pushToast('Sent to back', 'info')
   }
 
   function duplicateSticker(index: number) {
     const id = slots[index]
-    const style = slotStyles[index]
     if (!id) return
+
+    const style = slotStyles[index] ?? defaultStyle()
 
     // Find first empty slot
     const emptySlot = Object.keys(slots).find(k => !slots[Number(k)])
@@ -577,7 +588,7 @@ function App() {
     setSlots((prev) => ({ ...prev, [emptyIndex]: id }))
     setSlotStyles((prev) => ({
       ...prev,
-      [emptyIndex]: { ...style, zIndex: (style.zIndex ?? 0) + 1 },
+      [emptyIndex]: normalizeStyle({ ...style, zIndex: style.zIndex + 1 }),
     }))
     pushToast('Sticker duplicated', 'success')
   }

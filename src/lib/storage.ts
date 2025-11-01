@@ -70,7 +70,7 @@ export function resetStyles() {
 }
 
 export function defaultStyle(): StickerStyle {
-  return { scale: 1, rotate: 0, depth: 1.2 }
+  return { scale: 1, rotate: 0, depth: 1.2, zIndex: 0 }
 }
 
 export function normalizeStyle(s: Partial<StickerStyle>): StickerStyle {
@@ -78,7 +78,9 @@ export function normalizeStyle(s: Partial<StickerStyle>): StickerStyle {
   const scale = clamp(s.scale ?? d.scale, 0.6, 1.6)
   const rotate = Math.max(-180, Math.min(180, s.rotate ?? d.rotate))
   const depth = clamp(s.depth ?? d.depth, 0, 3)
-  return { scale, rotate, depth }
+  const zIndex =
+    typeof s.zIndex === 'number' && Number.isFinite(s.zIndex) ? s.zIndex : d.zIndex
+  return { scale, rotate, depth, zIndex }
 }
 
 function clamp(n: number, min: number, max: number) {

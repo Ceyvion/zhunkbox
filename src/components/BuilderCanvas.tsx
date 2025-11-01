@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import type { SlotMap, SlotStyleMap, StickerStyle, Trinket } from '../types'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
+import type { RemovalMethod } from '../lib/builderMetrics'
+import { defaultStyle } from '../lib/storage'
 
 type Props = {
   cols: number
@@ -11,7 +13,7 @@ type Props = {
   activeSlot: number | null
   onSelectSlot: (index: number | null) => void
   onPlace: (index: number, id: string | null) => void
-  onRemove: (index: number, method?: 'tap' | 'controls') => void
+  onRemove: (index: number, method?: RemovalMethod) => void
   onStyleChange: (index: number, partial: Partial<StickerStyle>) => void
   trinketMap: Record<string, Trinket>
 }
@@ -55,7 +57,7 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
   active: boolean
   onSelect: (i: number | null) => void
   onPlace: (index: number, id: string | null) => void
-  onRemove: (index: number, method?: 'tap' | 'controls') => void
+  onRemove: (index: number, method?: RemovalMethod) => void
   onStyleChange: (index: number, partial: Partial<StickerStyle>) => void
   trinket?: Trinket
 }) {
@@ -144,9 +146,8 @@ function Slot({ index, value, style, selectedId, active, onSelect, onPlace, onRe
 
 function DraggableTrinket({ index, label, trinket, style }: { index: number; label: string; trinket?: Trinket; style?: StickerStyle }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `slotitem:${index}` })
-  const scale = style?.scale ?? 1
-  const rotate = style?.rotate ?? 0
-  const depth = style?.depth ?? 1.2
+  const appliedStyle = style ?? defaultStyle()
+  const { scale, rotate, depth, zIndex } = appliedStyle
 
   // Build 2.5D drop-shadow filter from depth
   const d1 = Math.round(2 * depth)
@@ -157,6 +158,7 @@ function DraggableTrinket({ index, label, trinket, style }: { index: number; lab
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      style={{ zIndex }}
       data-dragging={isDragging ? 'true' : undefined}
       initial={{ scale: 0.2, rotate: -10, opacity: 0, y: 12 }}
       animate={{ scale: isDragging ? 1.08 : 1, rotate: 0, opacity: 1, y: isDragging ? -6 : 0 }}
@@ -182,7 +184,7 @@ function Controls({ index, style, onStyleChange, onRemove, onClose }: {
   onRemove: (i: number) => void
   onClose: () => void
 }) {
-  const s = style ?? { scale: 1, rotate: 0, depth: 1.2 }
+  const s = style ?? defaultStyle()
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9, y: -10 }}
@@ -224,7 +226,7 @@ function ControlsMobile({ index, style, onStyleChange, onRemove, onClose }: {
   onRemove: (i: number) => void
   onClose: () => void
 }) {
-  const s = style ?? { scale: 1, rotate: 0, depth: 1.2 }
+  const s = style ?? defaultStyle()
   function stop(e: any) { e.stopPropagation() }
   return (
     <div className="sm:hidden fixed left-0 right-0 bottom-0 z-50 px-2 pb-[calc(env(safe-area-inset-bottom,0)+8px)]" role="dialog" aria-label="Sticker controls" onClick={stop} onMouseDown={stop}>

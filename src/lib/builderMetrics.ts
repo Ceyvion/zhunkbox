@@ -1,7 +1,7 @@
 import { track } from './analytics'
 
 export type PlacementMethod = 'tap' | 'drag' | 'swap'
-export type RemovalMethod = 'tap' | 'controls'
+export type RemovalMethod = 'tap' | 'controls' | 'toolbar'
 
 export function recordPlacement(args: {
   index: number
@@ -93,4 +93,3 @@ export function recordCheckoutSubmit(args: {
     budget: args.budget,
   })
 }
-

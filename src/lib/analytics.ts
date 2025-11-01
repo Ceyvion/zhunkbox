@@ -9,7 +9,7 @@ export type AnalyticsEventPayloads = {
   trinket_remove: {
     index: number
     trinketId: string
-    method: 'tap' | 'controls'
+    method: 'tap' | 'controls' | 'toolbar'
   }
   trinket_move: {
     from: number

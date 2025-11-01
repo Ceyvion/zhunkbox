@@ -746,6 +746,7 @@ input.chip {
 
 .slot-trinket {
   @apply flex flex-col items-center;
+  position: relative;
   transition: filter 120ms ease;
 }
 

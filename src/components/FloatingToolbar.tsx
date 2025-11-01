@@ -47,13 +47,13 @@ export function FloatingToolbar({
             min="-180"
             max="180"
             step="5"
-            value={style.rotation}
+            value={style.rotate}
             onChange={(e) =>
-              onStyleChange(slotIndex, { rotation: Number.parseInt(e.target.value) })
+              onStyleChange(slotIndex, { rotate: Number.parseInt(e.target.value) })
             }
             className="slider"
           />
-          <span className="text-xs opacity-70">{style.rotation}°</span>
+          <span className="text-xs opacity-70">{style.rotate}°</span>
         </label>
       </div>
 
