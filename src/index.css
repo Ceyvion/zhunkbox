@@ -158,16 +158,16 @@
   --case-inner-border: rgba(246, 241, 255, 0.35);
   --case-inner-bg: radial-gradient(circle at 22% 20%, rgba(118, 96, 184, 0.55), rgba(58, 45, 112, 0.18) 60%, rgba(33, 28, 58, 0.05) 100%);
   --case-grid-dot: rgba(246, 241, 255, 0.28);
-  --landing-layer-bg: rgba(34, 34, 52, 0.78);
-  --landing-layer-border: rgba(246, 241, 255, 0.16);
-  --landing-layer-shadow: rgba(8, 6, 18, 0.55);
-  --landing-chip-soft: rgba(246, 241, 255, 0.18);
-  --landing-chip-text: rgba(246, 241, 255, 0.82);
-  --landing-input-bg: rgba(24, 20, 40, 0.92);
-  --landing-input-border: rgba(246, 241, 255, 0.22);
-  --landing-input-shadow: rgba(8, 6, 18, 0.55);
-  --landing-avatar-border: rgba(246, 241, 255, 0.18);
-  --landing-avatar-bg: rgba(20, 16, 34, 0.9);
+  --landing-layer-bg: rgba(16, 28, 54, 0.92);
+  --landing-layer-border: rgba(125, 211, 252, 0.34);
+  --landing-layer-shadow: rgba(6, 12, 26, 0.72);
+  --landing-chip-soft: rgba(125, 211, 252, 0.28);
+  --landing-chip-text: rgba(224, 244, 255, 0.94);
+  --landing-input-bg: rgba(12, 24, 46, 0.9);
+  --landing-input-border: rgba(125, 211, 252, 0.42);
+  --landing-input-shadow: rgba(6, 12, 26, 0.65);
+  --landing-avatar-border: rgba(125, 211, 252, 0.32);
+  --landing-avatar-bg: rgba(14, 24, 48, 0.92);
 }
 
 /* Sakura — soft blossom pinks */
@@ -1062,6 +1062,63 @@ input.chip {
 }
 .landing-faq__item p {
   margin-top: 0.6rem;
+}
+
+[data-theme='midnight'] .landing-hero {
+  background: linear-gradient(160deg, rgba(6, 12, 26, 0.95), rgba(18, 44, 82, 0.9));
+}
+[data-theme='midnight'] .landing-hero::before {
+  inset: 10% 18% auto 12%;
+  background: radial-gradient(circle at center, rgba(125, 211, 252, 0.28), rgba(125, 211, 252, 0));
+}
+[data-theme='midnight'] .hero-pill {
+  background: rgba(125, 211, 252, 0.24);
+  color: rgba(226, 244, 255, 0.92);
+}
+[data-theme='midnight'] .landing-hero__subtitle {
+  opacity: 0.9;
+}
+[data-theme='midnight'] .landing-hero__metric {
+  background: rgba(11, 26, 50, 0.8);
+  box-shadow:
+    0 10px 26px rgba(4, 12, 28, 0.55),
+    inset 0 0 0 1px rgba(125, 211, 252, 0.24);
+  border: 1px solid rgba(125, 211, 252, 0.28);
+}
+[data-theme='midnight'] .landing-hero__metric-label {
+  color: rgba(198, 222, 255, 0.85);
+}
+[data-theme='midnight'] .landing-pack-filter__search input {
+  box-shadow: 0 4px 18px rgba(6, 12, 26, 0.55);
+}
+[data-theme='midnight'] .landing-pack-filter__search input::placeholder {
+  color: rgba(185, 210, 255, 0.68);
+}
+[data-theme='midnight'] .landing-quick-starts__card {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, rgba(14, 28, 54, 0.96) 60%, var(--combo-accent, rgba(125, 211, 252, 0.6)) 40%),
+    color-mix(in srgb, rgba(26, 48, 96, 0.92) 45%, var(--combo-accent, rgba(125, 211, 252, 0.55)) 55%)
+  );
+  border-color: rgba(125, 211, 252, 0.38);
+  box-shadow: 6px 6px 0 rgba(6, 12, 26, 0.6);
+}
+[data-theme='midnight'] .landing-quick-starts__badge,
+[data-theme='midnight'] .landing-quick-starts__tip-label {
+  border-color: rgba(125, 211, 252, 0.32);
+}
+[data-theme='midnight'] .landing-quick-starts__preview img {
+  border-color: rgba(125, 211, 252, 0.36);
+}
+[data-theme='midnight'] .landing-faq__item {
+  border-color: rgba(125, 211, 252, 0.32);
+  box-shadow: 4px 4px 0 rgba(6, 12, 26, 0.6);
+}
+[data-theme='midnight'] .landing-faq__item summary {
+  color: rgba(224, 240, 255, 0.94);
+}
+[data-theme='midnight'] .landing-faq__item p {
+  color: rgba(198, 222, 255, 0.82);
 }
 
 .case-shell {
