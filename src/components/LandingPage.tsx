@@ -29,6 +29,8 @@ const VIBE_FILTERS = [
   { id: 'minimal', label: 'Minimal lines' },
 ] as const
 
+const VIBE_LABELS = Object.fromEntries(VIBE_FILTERS.map((filter) => [filter.id, filter.label])) as Record<string, string>
+
 const PACK_VIBES: Record<string, string[]> = {
   kawaii_animals: ['cozy', 'sweet'],
   sweet_treats: ['sweet'],
@@ -285,9 +287,13 @@ export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAd
           {QUICK_STARTS.map((combo) => {
             const pack = PACK_MAP[combo.packId]
             const previewIcons = pack?.trinkets?.map((id) => tMap[id]?.icon).filter(Boolean).slice(0, 5) as string[]
+            const primaryVibe = PACK_VIBES[combo.packId]?.[0]
+            const primaryLabel = primaryVibe ? VIBE_LABELS[primaryVibe] ?? primaryVibe : 'Curated combo'
             return (
               <article key={combo.title} className="landing-quick-starts__card" style={{ ['--combo-accent' as any]: combo.accent }}>
-                <div className="landing-quick-starts__badge">{PACK_VIBES[combo.packId]?.[0] ?? 'vibe'}</div>
+                <div className="landing-quick-starts__badge" data-vibe={primaryVibe ?? 'mixed'}>
+                  {primaryLabel}
+                </div>
                 <h3 className="landing-quick-starts__title">{combo.title}</h3>
                 <p className="landing-quick-starts__description text-sm">{combo.description}</p>
                 <p className="landing-quick-starts__tip text-xs">
@@ -354,7 +360,7 @@ function PackCard({ pack, tMap, onChoose, vibes }: { pack: Pack; tMap: Record<st
           <div className="landing-pack-vibes">
             {vibes.map((vibe) => (
               <span key={vibe} className="landing-pack-vibes__chip">
-                {vibe}
+                {VIBE_LABELS[vibe] ?? vibe}
               </span>
             ))}
           </div>
