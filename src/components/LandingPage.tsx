@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import packs from '../data/packs.json'
 import type { Trinket } from '../types'
 import { clsx } from 'clsx'
@@ -12,6 +12,91 @@ type Pack = {
   trinkets: string[]
 }
 
+type QuickStart = {
+  packId: string
+  title: string
+  description: string
+  tip: string
+  accent: string
+}
+
+const VIBE_FILTERS = [
+  { id: 'all', label: 'All vibes' },
+  { id: 'cozy', label: 'Cozy cute' },
+  { id: 'sweet', label: 'Sweet treats' },
+  { id: 'dreamy', label: 'Dreamy sparkle' },
+  { id: 'bold', label: 'Bold + loud' },
+  { id: 'minimal', label: 'Minimal lines' },
+] as const
+
+const PACK_VIBES: Record<string, string[]> = {
+  kawaii_animals: ['cozy', 'sweet'],
+  sweet_treats: ['sweet'],
+  celestial_sparkle: ['dreamy'],
+  emoji_mix: ['bold'],
+  letters_numbers: ['minimal'],
+}
+
+const PACK_LIST = packs as Pack[]
+const PACK_MAP = Object.fromEntries(PACK_LIST.map((pack) => [pack.id, pack])) as Record<string, Pack>
+
+const FEATURE_CARDS = [
+  {
+    icon: '🧩',
+    title: 'Drag & drop builder',
+    detail: 'Snap trinkets into place with smart magnets, rotation nudges, and glitter overlays.',
+  },
+  {
+    icon: '📊',
+    title: 'Built-in analytics',
+    detail: 'See which trinkets trend across designs so you can restock the right inventory faster.',
+  },
+  {
+    icon: '💌',
+    title: 'Share-ready exports',
+    detail: 'Export crisp mockups sized for TikTok, Instagram, or direct-to-customer handoffs.',
+  },
+] as const
+
+const QUICK_STARTS: QuickStart[] = [
+  {
+    packId: 'kawaii_animals',
+    title: 'Pastel pet pals',
+    description: 'Layer the panda over blush gradients, then sprinkle charms for cozy cottagecore energy.',
+    tip: 'Toggle the sakura theme and add glitter for instant softness.',
+    accent: '#f8c6dd',
+  },
+  {
+    packId: 'celestial_sparkle',
+    title: 'Midnight galaxy glow',
+    description: 'Stack the moon and star charms, then offset planets for a balanced cosmic spread.',
+    tip: 'Switch to the midnight theme and rotate stickers 15° for motion.',
+    accent: '#c9d7ff',
+  },
+  {
+    packId: 'emoji_mix',
+    title: 'Chaotic text spam',
+    description: 'Mix bold emoji faces with letters to spell secret messages or inside jokes.',
+    tip: 'Use the matcha theme and shrink duplicate icons for contrast.',
+    accent: '#ffe7b8',
+  },
+]
+
+const FAQ_ITEMS = [
+  {
+    question: 'Can I mix trinkets from different packs?',
+    answer: 'Yep! Start with any pack, then drag extras from the tray. Your layout stays saved while you explore.',
+  },
+  {
+    question: 'How do I share my finished case?',
+    answer: 'Open the checkout bar and export a high-res mockup or copy a shareable link to send to friends.',
+  },
+  {
+    question: 'Does the builder work on mobile?',
+    answer: 'Absolutely. Rotate your phone landscape for more space and follow the quick guide that appears.',
+  },
+] as const
+
 export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAdmin }: { onChoose: (packId: string) => void; theme: Theme; onToggleTheme: (next: Theme) => void; trinkets: Trinket[]; onOpenAdmin?: () => void }) {
   const tMap = useMemo(
     () => Object.fromEntries(trinkets.map(t => [t.id, t])) as Record<string, Trinket>,
@@ -20,14 +105,29 @@ export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAd
   const packListRef = useRef<HTMLDivElement>(null)
   const heroStickerIds = ['kawaii-boba', 'star', 'heart', 'kawaii-panda', 'rainbow', 'sparkle', 'ice-cream', 'planet']
   const heroStickers = heroStickerIds.map((id) => tMap[id]?.icon).filter(Boolean) as string[]
-  const packCount = (packs as Pack[]).length
+  const packCount = PACK_LIST.length
   const totalTrinkets = trinkets.length
   const tagCount = useMemo(() => {
     const tags = new Set<string>()
     trinkets.forEach((t) => (t.tags ?? []).forEach((tag) => tags.add(tag)))
     return tags.size
   }, [trinkets])
-  const featuredPack = (packs as Pack[])[0]
+  const featuredPack = PACK_LIST[0]
+  const [activeVibe, setActiveVibe] = useState<(typeof VIBE_FILTERS)[number]['id']>('all')
+  const [packSearch, setPackSearch] = useState('')
+
+  const filteredPacks = useMemo(() => {
+    const term = packSearch.trim().toLowerCase()
+    return PACK_LIST.filter((pack) => {
+      const matchesVibe = activeVibe === 'all' || (PACK_VIBES[pack.id] ?? []).includes(activeVibe)
+      const matchesTerm =
+        !term ||
+        pack.name.toLowerCase().includes(term) ||
+        pack.description.toLowerCase().includes(term) ||
+        (PACK_VIBES[pack.id] ?? []).some((vibe) => vibe.includes(term))
+      return matchesVibe && matchesTerm
+    })
+  }, [activeVibe, packSearch])
 
   function handleStartDesign() {
     if (packListRef.current) {
@@ -109,22 +209,115 @@ export function LandingPage({ onChoose, theme, onToggleTheme, trinkets, onOpenAd
 
       <section className="paper p-5 sm:p-6" ref={packListRef}>
         <h2 className="font-semibold mb-4">Trinket packs</h2>
+        <div className="landing-pack-filter">
+          <div className="landing-pack-filter__search">
+            <label className="sr-only" htmlFor="pack-search">
+              Search packs
+            </label>
+            <input
+              id="pack-search"
+              value={packSearch}
+              onChange={(event) => setPackSearch(event.target.value)}
+              placeholder="Search by vibe or name"
+              type="search"
+            />
+          </div>
+          <div className="landing-pack-filter__chips" role="listbox" aria-label="Filter packs by vibe">
+            {VIBE_FILTERS.map((filter) => (
+              <button
+                key={filter.id}
+                type="button"
+                className={clsx('chip', activeVibe === filter.id && 'chip--active')}
+                onClick={() => setActiveVibe(filter.id)}
+                aria-selected={activeVibe === filter.id}
+                role="option"
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {filteredPacks.length === 0 ? (
+          <p className="text-sm italic opacity-70">No packs match that vibe yet. Try clearing the filters.</p>
+        ) : null}
         <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(packs as Pack[]).map((p) => (
+          {filteredPacks.map((p) => (
             <motion.div key={p.id} whileHover={{ y: -2, rotate: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 300, damping: 18 }}>
-              <PackCard pack={p} tMap={tMap} onChoose={() => onChoose(p.id)} />
+              <PackCard pack={p} tMap={tMap} vibes={PACK_VIBES[p.id] ?? []} onChoose={() => onChoose(p.id)} />
             </motion.div>
           ))}
         </div>
       </section>
 
-      <section className="paper p-5 sm:p-6">
-        <h3 className="font-semibold mb-2">Lab perks</h3>
-        <ul className="space-y-2 text-sm">
-          <li>✨ Export polished mockups to share with friends or your shop.</li>
-          <li>🧪 Track which trinkets are trending with the built-in analytics.</li>
-          <li>🎨 Swap themes, toggle glitter, and remix packs without losing progress.</li>
-        </ul>
+      <section className="paper p-5 sm:p-6 landing-highlight">
+        <h2 className="font-semibold mb-3">Why makers love the lab</h2>
+        <div className="landing-highlight__grid">
+          {FEATURE_CARDS.map((card) => (
+            <article key={card.title} className="landing-highlight__item">
+              <span className="landing-highlight__icon" aria-hidden="true">
+                {card.icon}
+              </span>
+              <h3 className="landing-highlight__title">{card.title}</h3>
+              <p className="landing-highlight__body text-sm">{card.detail}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="paper p-5 sm:p-6 landing-quick-starts">
+        <div className="landing-quick-starts__header">
+          <div>
+            <h2 className="font-semibold mb-2">Quick-start combos</h2>
+            <p className="text-sm opacity-75 max-w-xl">
+              Jump in with a curated layout. Each combo loads the right pack and hints at how to style it like a pro.
+            </p>
+          </div>
+          <button
+            className="chip"
+            type="button"
+            onClick={() => featuredPack && onChoose(featuredPack.id)}
+            disabled={!featuredPack}
+          >
+            Skip ahead to builder
+          </button>
+        </div>
+        <div className="landing-quick-starts__grid">
+          {QUICK_STARTS.map((combo) => {
+            const pack = PACK_MAP[combo.packId]
+            const previewIcons = pack?.trinkets?.map((id) => tMap[id]?.icon).filter(Boolean).slice(0, 5) as string[]
+            return (
+              <article key={combo.title} className="landing-quick-starts__card" style={{ ['--combo-accent' as any]: combo.accent }}>
+                <div className="landing-quick-starts__badge">{PACK_VIBES[combo.packId]?.[0] ?? 'vibe'}</div>
+                <h3 className="landing-quick-starts__title">{combo.title}</h3>
+                <p className="landing-quick-starts__description text-sm">{combo.description}</p>
+                <p className="landing-quick-starts__tip text-xs">
+                  <span className="landing-quick-starts__tip-label">Pro tip</span>
+                  {combo.tip}
+                </p>
+                <div className="landing-quick-starts__preview">
+                  {previewIcons.map((src, index) => (
+                    <img key={`${combo.packId}-${index}`} src={src} alt="" loading="lazy" />
+                  ))}
+                </div>
+                <button className="tape-btn" type="button" onClick={() => onChoose(combo.packId)}>
+                  Load this combo
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="paper p-5 sm:p-6 landing-faq">
+        <h2 className="font-semibold mb-3">Frequently asked questions</h2>
+        <div className="landing-faq__items">
+          {FAQ_ITEMS.map((item) => (
+            <details key={item.question} className="landing-faq__item">
+              <summary>{item.question}</summary>
+              <p className="text-sm opacity-80">{item.answer}</p>
+            </details>
+          ))}
+        </div>
       </section>
     </div>
   )
@@ -151,12 +344,21 @@ function StepCard({ index, title, detail }: { index: number; title: string; deta
   )
 }
 
-function PackCard({ pack, tMap, onChoose }: { pack: Pack; tMap: Record<string, Trinket>; onChoose: () => void }) {
+function PackCard({ pack, tMap, onChoose, vibes }: { pack: Pack; tMap: Record<string, Trinket>; onChoose: () => void; vibes: string[] }) {
   const icons = pack.trinkets.map(id => tMap[id]?.icon).filter(Boolean).slice(0, 4) as string[]
   return (
     <div className="paper p-4 flex flex-col pack-card">
-      <div className="mb-3">
+      <div className="mb-3 space-y-1">
         <h3 className="font-bold wonky text-lg" style={{ ['--r' as any]: `${(Math.random()*2-1).toFixed(2)}deg` }}>{pack.name}</h3>
+        {vibes.length ? (
+          <div className="landing-pack-vibes">
+            {vibes.map((vibe) => (
+              <span key={vibe} className="landing-pack-vibes__chip">
+                {vibe}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <p className="text-sm opacity-70">{pack.description}</p>
       </div>
       <div className="flex items-center gap-2 mb-4">
